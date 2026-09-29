@@ -1,0 +1,13 @@
+{
+  "name": "wardrobe-app",
+  "version": "1.0.0",
+  "description": "我的衣橱 - 电子穿搭管家（前后端完整应用）",
+  "private": true,
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "dev": "cd backend && node --watch server.js",
+    "install:all": "cd backend && npm install"
+  },
+  "keywords": ["wardrobe", "clothing", "outfit", "穿搭", "衣橱"],
+  "license": "MIT"
+}

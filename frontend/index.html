@@ -2,16 +2,20 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#8B6F47">
-<title>我的衣橱 - 电子穿搭管家</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>我的衣橱 · 电子穿搭管家</title>
 <link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%238B6F47'/><text x='50' y='68' font-size='50' text-anchor='middle' fill='white'>W</text></svg>">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
 <header class="header">
   <div class="header-inner">
-    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0</span></div>
+    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0.1</span></div>
     <nav class="nav-tabs" id="navTabs">
       <button class="nav-tab active" data-view="wardrobe">衣橱</button>
       <button class="nav-tab" data-view="calendar">日历</button>
@@ -19,28 +23,38 @@
       <button class="nav-tab" data-view="stats">统计</button>
     </nav>
     <div class="header-actions">
-      <button class="btn btn-outline btn-icon" title="导出数据" onclick="App.exportData()">↓</button>
+      <button class="btn btn-outline btn-icon" title="数据导出" onclick="App.exportData()">&#8595;</button>
       <button class="btn btn-primary" onclick="App.openAddModal()">+ 添加衣服</button>
     </div>
   </div>
 </header>
+
 <main class="main">
   <div class="stats-row" id="statsRow"></div>
+
   <div class="view active" id="view-wardrobe">
     <div class="toolbar">
       <div class="chip-row" id="categoryBar"></div>
       <input type="text" class="search-input" id="searchInput" placeholder="搜索衣服..." oninput="App.renderWardrobe()">
     </div>
     <div class="chip-row" style="margin-bottom:16px" id="seasonBar"></div>
+    <div class="chip-row tag-filter-row" id="tagFilterBar" style="margin-bottom:16px;display:none"></div>
+    <div class="sort-bar">
+      <span class="sort-label">排序：</span>
+      <button class="sort-chip active" data-sort="recent" onclick="App.setSort('recent')">最新</button>
+      <button class="sort-chip" data-sort="worn" onclick="App.setSort('worn')">穿得最多</button>
+      <button class="sort-chip" data-sort="price" onclick="App.setSort('price')">价格</button>
+    </div>
     <div class="wardrobe-grid" id="wardrobeGrid"></div>
   </div>
+
   <div class="view" id="view-calendar">
     <div class="calendar-header">
-      <div class="calendar-title" id="calendarTitle"></div>
+      <div class="calendar-title" id="calendarTitle">2026年9月</div>
       <div class="calendar-nav">
-        <button class="btn btn-outline btn-sm" onclick="App.changeMonth(-1)">← 上月</button>
+        <button class="btn btn-outline btn-sm" onclick="App.changeMonth(-1)">&larr; 上月</button>
         <button class="btn btn-outline btn-sm" onclick="App.changeMonth(0)">今天</button>
-        <button class="btn btn-outline btn-sm" onclick="App.changeMonth(1)">下月 →</button>
+        <button class="btn btn-outline btn-sm" onclick="App.changeMonth(1)">下月 &rarr;</button>
       </div>
     </div>
     <div class="calendar-grid">
@@ -51,71 +65,120 @@
       <div class="calendar-days" id="calendarDays"></div>
     </div>
   </div>
+
   <div class="view" id="view-generator">
     <div class="outfit-generator">
       <h2>随机搭配</h2>
-      <p>从你的衣橱里随机抽出一套穿搭</p>
+      <p>从你的衣橱里随机抽出一套穿搭，不知道穿什么的时候试试</p>
       <div class="outfit-preview" id="outfitPreview"></div>
-      <div style="display:flex;gap:12px;justify-content:center">
-        <button class="btn btn-accent" onclick="App.generateOutfit()">换一套</button>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-accent" onclick="App.generateOutfit()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+          换一套
+        </button>
         <button class="btn btn-primary" onclick="App.saveGeneratedOutfit()" id="saveOutfitBtn" style="display:none">记录这套穿搭</button>
       </div>
     </div>
   </div>
+
   <div class="view" id="view-stats">
     <div class="stats-grid">
       <div class="stats-card"><h3>分类分布</h3><div class="category-bar-chart" id="categoryChart"></div></div>
       <div class="stats-card"><h3>季节分布</h3><div class="category-bar-chart" id="seasonChart"></div></div>
       <div class="stats-card"><h3>穿着频率 Top 10</h3><div class="category-bar-chart" id="wornChart"></div></div>
-      <div class="stats-card"><h3>性价比排行</h3><div class="category-bar-chart" id="valueChart"></div></div>
-      <div class="stats-card" style="grid-column:1/-1"><h3>待提升衣物（贵但穿得少）</h3><div class="category-bar-chart" id="underutilizedChart"></div></div>
+      <div class="stats-card"><h3>性价比排行（单次穿着成本）</h3><div class="category-bar-chart" id="valueChart"></div></div>
+      <div class="stats-card" style="grid-column:1/-1" id="underutilizedCard">
+        <h3>待提升衣物（贵但穿得少）</h3>
+        <div class="category-bar-chart" id="underutilizedChart"></div>
+      </div>
     </div>
   </div>
 </main>
+
 <div class="modal-overlay" id="addModal">
   <div class="modal">
-    <div class="modal-header"><div class="modal-title" id="modalTitle">添加衣服</div><button class="modal-close" onclick="App.closeModal('addModal')">×</button></div>
+    <div class="modal-header"><div class="modal-title" id="modalTitle">添加衣服</div><button class="modal-close" onclick="App.closeModal('addModal')">&times;</button></div>
     <div class="modal-body">
-      <div class="form-group"><label class="form-label">照片</label><div class="upload-area" onclick="document.getElementById('imageInput').click()"><div style="font-size:13px;color:#999" id="uploadText">点击上传衣服照片</div></div><img id="uploadPreview" class="upload-preview" style="display:none"><input type="file" id="imageInput" accept="image/*" style="display:none" onchange="App.handleImageUpload(this)"></div>
+      <div class="form-group">
+        <label class="form-label">照片</label>
+        <div class="upload-area" onclick="document.getElementById('imageInput').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div style="font-size:13px;color:var(--text-secondary)" id="uploadText">点击上传衣服照片</div>
+        </div>
+        <img id="uploadPreview" class="upload-preview" style="display:none">
+        <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="App.handleImageUpload(this)">
+      </div>
       <div class="form-group"><label class="form-label">名称 *</label><input type="text" class="form-input" id="clothingName" placeholder="例如：白色基础款T恤"></div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">分类</label><select class="form-select" id="clothingCategory"><option>上衣</option><option>裤子</option><option>裙子</option><option>鞋子</option><option>外套</option><option>配饰</option><option>包包</option></select></div>
-        <div class="form-group"><label class="form-label">季节</label><select class="form-select" id="clothingSeason"><option>春</option><option>夏</option><option>秋</option><option>冬</option><option>四季</option></select></div>
+        <div class="form-group"><label class="form-label">分类</label>
+          <select class="form-select" id="clothingCategory">
+            <option value="上衣">上衣</option><option value="裤子">裤子</option><option value="裙子">裙子</option>
+            <option value="鞋子">鞋子</option><option value="外套">外套</option><option value="配饰">配饰</option><option value="包包">包包</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">季节</label>
+          <select class="form-select" id="clothingSeason">
+            <option value="春">春</option><option value="夏">夏</option><option value="秋">秋</option><option value="冬">冬</option><option value="四季">四季</option>
+          </select>
+        </div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">颜色</label><input type="text" class="form-input" id="clothingColor" placeholder="例如：白色"></div>
-        <div class="form-group"><label class="form-label">价格（元）</label><input type="number" class="form-input" id="clothingPrice" placeholder="0" min="0"></div>
+        <div class="form-group"><label class="form-label">颜色</label><input type="text" class="form-input" id="clothingColor" placeholder="例如：白色、牛仔蓝"></div>
+        <div class="form-group"><label class="form-label">价格（元）</label><input type="number" class="form-input" id="clothingPrice" placeholder="0" min="0" step="0.01"></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">品牌</label><input type="text" class="form-input" id="clothingBrand"></div>
+        <div class="form-group"><label class="form-label">品牌</label><input type="text" class="form-input" id="clothingBrand" placeholder="选填"></div>
         <div class="form-group"><label class="form-label">购买日期</label><input type="date" class="form-input" id="clothingPurchaseDate"></div>
       </div>
-      <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="clothingNote"></textarea></div>
+      <div class="form-group"><label class="form-label">材质</label><input type="text" class="form-input" id="clothingMaterial" placeholder="例如：纯棉、羊毛"></div>
+      <div class="form-group"><label class="form-label">标签 <span style="font-weight:400;color:var(--text-secondary);font-size:11px">用逗号分隔，例如：通勤,百搭,新买</span></label><input type="text" class="form-input" id="clothingTags" placeholder="例如：通勤,百搭,新买"></div>
+      <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="clothingNote" placeholder="其他信息..."></textarea></div>
     </div>
-    <div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal('addModal')">取消</button><button class="btn btn-primary" onclick="App.saveClothing()">保存</button></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="App.closeModal('addModal')">取消</button>
+      <button class="btn btn-primary" onclick="App.saveClothing()">保存</button>
+    </div>
   </div>
 </div>
+
 <div class="modal-overlay" id="outfitModal">
   <div class="modal modal-lg">
-    <div class="modal-header"><div class="modal-title" id="outfitModalTitle">记录穿搭</div><button class="modal-close" onclick="App.closeModal('outfitModal')">×</button></div>
+    <div class="modal-header"><div class="modal-title" id="outfitModalTitle">记录穿搭</div><button class="modal-close" onclick="App.closeModal('outfitModal')">&times;</button></div>
     <div class="modal-body">
-      <div class="form-group"><label class="form-label">选择今天穿的衣服（可多选）</label><div id="outfitSelectList" class="outfit-select-grid"></div></div>
+      <div class="form-group">
+        <label class="form-label">选择今天穿的衣服（可多选）</label>
+        <div id="outfitSelectList" class="outfit-select-grid"></div>
+      </div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">天气</label><select class="form-select" id="outfitWeather"><option value="">不记录</option><option>晴</option><option>多云</option><option>阴</option><option>雨</option><option>雪</option></select></div>
-        <div class="form-group"><label class="form-label">备注</label><input type="text" class="form-input" id="outfitNote"></div>
+        <div class="form-group"><label class="form-label">天气</label>
+          <select class="form-select" id="outfitWeather">
+            <option value="">不记录</option><option value="晴">晴</option><option value="多云">多云</option>
+            <option value="阴">阴</option><option value="雨">雨</option><option value="雪">雪</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">备注</label><input type="text" class="form-input" id="outfitNote" placeholder="今天的穿搭感受..."></div>
       </div>
     </div>
-    <div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal('outfitModal')">取消</button><button class="btn btn-accent" onclick="App.saveOutfit()">保存穿搭</button></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="App.closeModal('outfitModal')">取消</button>
+      <button class="btn btn-accent" onclick="App.saveOutfit()">保存穿搭</button>
+    </div>
   </div>
 </div>
+
 <div class="modal-overlay" id="detailModal">
   <div class="modal">
-    <div class="modal-header"><div class="modal-title">衣服详情</div><button class="modal-close" onclick="App.closeModal('detailModal')">×</button></div>
+    <div class="modal-header"><div class="modal-title">衣服详情</div><button class="modal-close" onclick="App.closeModal('detailModal')">&times;</button></div>
     <div class="modal-body" id="detailBody"></div>
-    <div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal('detailModal')">关闭</button><button class="btn btn-primary" id="detailEditBtn">编辑</button></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="App.closeModal('detailModal')">关闭</button>
+      <button class="btn btn-primary" id="detailEditBtn" onclick="App.editFromDetail()">编辑</button>
+    </div>
   </div>
 </div>
+
 <div class="toast" id="toast"></div>
+
 <script src="js/api.js"></script>
 <script src="js/app.js"></script>
 </body>

@@ -1,6 +1,6 @@
 {
   "name": "wardrobe-backend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "电子衣橱 - 后端服务",
   "main": "server.js",
   "scripts": {

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#8B6F47">
+<title>我的衣橱 - 电子穿搭管家</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0</span></div>
+    <nav class="nav-tabs" id="navTabs">
+      <button class="nav-tab active" data-view="wardrobe">衣橱</button>
+      <button class="nav-tab" data-view="calendar">日历</button>
+      <button class="nav-tab" data-view="generator">搭配</button>
+      <button class="nav-tab" data-view="stats">统计</button>
+    </nav>
+    <div class="header-actions">
+      <button class="btn btn-outline btn-icon" title="导出数据" onclick="App.exportData()">↓</button>
+      <button class="btn btn-primary" onclick="App.openAddModal()">+ 添加衣服</button>
+    </div>
+  </div>
+</header>
+<main class="main">
+  <div class="stats-row" id="statsRow"></div>
+  <div class="view active" id="view-wardrobe">
+    <div class="toolbar">
+      <div class="chip-row" id="categoryBar"></div>
+      <input type="text" class="search-input" id="searchInput" placeholder="搜索衣服..." oninput="App.renderWardrobe()">
+    </div>
+    <div class="chip-row" style="margin-bottom:16px" id="seasonBar"></div>
+    <div class="wardrobe-grid" id="wardrobeGrid"></div>
+  </div>
+  <div class="view" id="view-calendar">
+    <div class="calendar-header">
+      <div class="calendar-title" id="calendarTitle"></div>
+      <div class="calendar-nav">
+        <button class="btn btn-outline btn-sm" onclick="App.changeMonth(-1)">← 上月</button>
+        <button class="btn btn-outline btn-sm" onclick="App.changeMonth(0)">今天</button>
+        <button class="btn btn-outline btn-sm" onclick="App.changeMonth(1)">下月 →</button>
+      </div>
+    </div>
+    <div class="calendar-grid">
+      <div class="calendar-weekdays">
+        <div class="weekday-label">一</div><div class="weekday-label">二</div><div class="weekday-label">三</div>
+        <div class="weekday-label">四</div><div class="weekday-label">五</div><div class="weekday-label">六</div><div class="weekday-label">日</div>
+      </div>
+      <div class="calendar-days" id="calendarDays"></div>
+    </div>
+  </div>
+  <div class="view" id="view-generator">
+    <div class="outfit-generator">
+      <h2>随机搭配</h2>
+      <p>从你的衣橱里随机抽出一套穿搭</p>
+      <div class="outfit-preview" id="outfitPreview"></div>
+      <div style="display:flex;gap:12px;justify-content:center">
+        <button class="btn btn-accent" onclick="App.generateOutfit()">换一套</button>
+        <button class="btn btn-primary" onclick="App.saveGeneratedOutfit()" id="saveOutfitBtn" style="display:none">记录这套穿搭</button>
+      </div>
+    </div>
+  </div>
+  <div class="view" id="view-stats">
+    <div class="stats-grid">
+      <div class="stats-card"><h3>分类分布</h3><div class="category-bar-chart" id="categoryChart"></div></div>
+      <div class="stats-card"><h3>季节分布</h3><div class="category-bar-chart" id="seasonChart"></div></div>
+      <div class="stats-card"><h3>穿着频率 Top 10</h3><div class="category-bar-chart" id="wornChart"></div></div>
+      <div class="stats-card"><h3>性价比排行</h3><div class="category-bar-chart" id="valueChart"></div></div>
+      <div class="stats-card" style="grid-column:1/-1"><h3>待提升衣物（贵但穿得少）</h3><div class="category-bar-chart" id="underutilizedChart"></div></div>
+    </div>
+  </div>
+</main>
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="modalTitle">添加衣服</div><button class="modal-close" onclick="App.closeModal('addModal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">照片</label><div class="upload-area" onclick="document.getElementById('imageInput').click()"><div style="font-size:13px;color:#999" id="uploadText">点击上传衣服照片</div></div><img id="uploadPreview" class="upload-preview" style="display:none"><input type="file" id="imageInput" accept="image/*" style="display:none" onchange="App.handleImageUpload(this)"></div>
+      <div class="form-group"><label class="form-label">名称 *</label><input type="text" class="form-input" id="clothingName" placeholder="例如：白色基础款T恤"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">分类</label><select class="form-select" id="clothingCategory"><option>上衣</option><option>裤子</option><option>裙子</option><option>鞋子</option><option>外套</option><option>配饰</option><option>包包</option></select></div>
+        <div class="form-group"><label class="form-label">季节</label><select class="form-select" id="clothingSeason"><option>春</option><option>夏</option><option>秋</option><option>冬</option><option>四季</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">颜色</label><input type="text" class="form-input" id="clothingColor" placeholder="例如：白色"></div>
+        <div class="form-group"><label class="form-label">价格（元）</label><input type="number" class="form-input" id="clothingPrice" placeholder="0" min="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">品牌</label><input type="text" class="form-input" id="clothingBrand"></div>
+        <div class="form-group"><label class="form-label">购买日期</label><input type="date" class="form-input" id="clothingPurchaseDate"></div>
+      </div>
+      <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="clothingNote"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal('addModal')">取消</button><button class="btn btn-primary" onclick="App.saveClothing()">保存</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="outfitModal">
+  <div class="modal modal-lg">
+    <div class="modal-header"><div class="modal-title" id="outfitModalTitle">记录穿搭</div><button class="modal-close" onclick="App.closeModal('outfitModal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">选择今天穿的衣服（可多选）</label><div id="outfitSelectList" class="outfit-select-grid"></div></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">天气</label><select class="form-select" id="outfitWeather"><option value="">不记录</option><option>晴</option><option>多云</option><option>阴</option><option>雨</option><option>雪</option></select></div>
+        <div class="form-group"><label class="form-label">备注</label><input type="text" class="form-input" id="outfitNote"></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal('outfitModal')">取消</button><button class="btn btn-accent" onclick="App.saveOutfit()">保存穿搭</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">衣服详情</div><button class="modal-close" onclick="App.closeModal('detailModal')">×</button></div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="App.closeModal('detailModal')">关闭</button><button class="btn btn-primary" id="detailEditBtn">编辑</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

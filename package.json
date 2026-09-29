@@ -1,6 +1,6 @@
 {
   "name": "wardrobe-app",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "我的衣橱 - 电子穿搭管家（前后端完整应用）",
   "private": true,
   "scripts": {

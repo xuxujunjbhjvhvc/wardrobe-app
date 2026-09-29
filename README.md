@@ -2,7 +2,7 @@
 
 > 一个简洁、高功能性的个人衣橱管理应用，帮你记录每一件衣服的穿着频次，计算真实性价比。
 
-![Version](https://img.shields.io/badge/version-1.0.0-brightgreen)
+![Version](https://img.shields.io/badge/version-1.0.1-brightgreen)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-blue)
 ![License](https://img.shields.io/badge/license-MIT-orange)
 
@@ -10,9 +10,9 @@
 
 ### 📦 衣物管理
 - 衣物全生命周期管理：添加、编辑、删除、软删除
-- 详细属性：名称、分类、季节、颜色、价格、品牌、材质、购买日期、备注
+- 详细属性：名称、分类、季节、颜色、价格、品牌、材质、购买日期、备注、标签
 - 照片上传（自动压缩优化）
-- 分类筛选 + 季节筛选 + 关键词搜索
+- 分类筛选 + 季节筛选 + 标签筛选 + 关键词搜索
 - 多种排序：最新添加、穿得最多、价格高低
 
 ### 📅 穿搭日历
@@ -119,12 +119,13 @@ npm start
 ### 衣物管理
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/clothing` | 获取衣物列表（支持 category/season/search/sort 参数） |
+| GET | `/api/clothing` | 获取衣物列表（支持 category/season/search/sort/tag 参数） |
 | GET | `/api/clothing/:id` | 获取衣物详情（含穿着历史） |
-| POST | `/api/clothing` | 添加衣物 |
-| PUT | `/api/clothing/:id` | 更新衣物 |
+| POST | `/api/clothing` | 添加衣物（支持 tags 字段） |
+| PUT | `/api/clothing/:id` | 更新衣物（支持 tags 字段） |
 | DELETE | `/api/clothing/:id` | 删除衣物（软删除） |
 | POST | `/api/clothing/:id/wear` | 记录穿着一次 |
+| GET | `/api/clothing/tags/all` | 获取所有标签（含计数） |
 
 ### 穿搭记录
 | 方法 | 路径 | 说明 |
@@ -160,6 +161,13 @@ npm start
 
 ## 📝 更新日志
 
+### v1.0.1 (2026-09-30)
+- 🏷️ **衣物标签系统**：支持自定义标签（逗号分隔），多标签筛选栏，标签计数统计
+- 🎨 **UI细节打磨**：卡片入场动画、悬停提升效果、按钮点击反馈
+- 🔧 **数据库自动迁移**：旧数据库自动添加 tags 字段，无需手动操作
+- 🔍 搜索范围扩展到标签字段
+- 🐛 修复统计页空数据显示
+
 ### v1.0.0 (2026-09-30)
 - 🎉 首个正式版本发布
 - ✅ 前后端分离架构（Node.js + Express + SQLite）
@@ -175,7 +183,7 @@ npm start
 
 ## 🗺️ 路线图
 
-- [ ] 衣物标签系统（自定义标签）
+- [x] 衣物标签系统（自定义标签）
 - [ ] 颜色搭配建议
 - [ ] 天气联动穿搭推荐
 - [ ] 洗衣提醒（基于穿着次数）

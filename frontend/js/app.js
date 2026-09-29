@@ -29,11 +29,88 @@ const App = {
   },
 
   async init() {
+    this.initTheme();
     this.bindNav();
     this.bindModalClose();
     this.renderCategoryBar();
     await this.loadAll();
     this.registerSW();
+  },
+
+  initTheme() {
+    try {
+      const saved = localStorage.getItem('wardrobe-theme');
+      if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    } catch (e) {}
+  },
+
+  toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('wardrobe-theme', 'light');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('wardrobe-theme', 'dark');
+    }
+  },
+
+  // ===== v1.0.2 颜色搭配引擎 =====
+  colorMap: {
+    '白':'#FFFFFF','白色':'#FFFFFF','米白':'#F5F5DC','奶白':'#FFF8E7',
+    '黑':'#000000','黑色':'#000000',
+    '灰':'#808080','灰色':'#808080','深灰':'#404040','浅灰':'#C0C0C0',
+    '红':'#E74C3C','红色':'#E74C3C','酒红':'#722F37','砖红':'#B22222',
+    '蓝':'#3498DB','蓝色':'#3498DB','牛仔蓝':'#4682B4','深蓝':'#1A1A4E','藏青':'#1A1A4E','藏蓝':'#1A1A4E','浅蓝':'#87CEEB','天蓝':'#87CEEB',
+    '绿':'#2ECC71','绿色':'#2ECC71','军绿':'#4B5320','墨绿':'#1B4D3E','浅绿':'#90EE90',
+    '黄':'#F1C40F','黄色':'#F1C40F','姜黄':'#DAA520','米黄':'#F5DEB3',
+    '紫':'#9B59B6','紫色':'#9B59B6','浅紫':'#D8BFD8',
+    '粉':'#FFB6C1','粉色':'#FFB6C1','玫红':'#FF007F',
+    '棕':'#8B4513','棕色':'#8B4513','咖啡':'#6F4E37','驼色':'#C19A6B','卡其':'#C3B091','卡其色':'#C3B091','米色':'#F5F5DC','米':'#F5F5DC',
+    '橙':'#E67E22','橙色':'#E67E22','橘色':'#E67E22',
+    '银':'#C0C0C0','银色':'#C0C0C0','金':'#FFD700','金色':'#FFD700'
+  },
+  neutralColors: new Set(['#FFFFFF','#F5F5DC','#FFF8E7','#000000','#808080','#404040','#C0C0C0','#F5DEB3','#C3B091','#C19A6B']),
+
+  parseColor(colorName) {
+    if (!colorName) return null;
+    const name = colorName.trim();
+    for (const [key, hex] of Object.entries(this.colorMap)) {
+      if (name.includes(key)) return hex;
+    }
+    return null;
+  },
+
+  hexToHsl(hex) {
+    let r=parseInt(hex.slice(1,3),16)/255,g=parseInt(hex.slice(3,5),16)/255,b=parseInt(hex.slice(5,7),16)/255;
+    const max=Math.max(r,g,b),min=Math.min(r,g,b);
+    let h=0,s=0,l=(max+min)/2;
+    if(max!==min){const d=max-min;s=l>0.5?d/(2-max-min):d/(max+min);
+      switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break;}h*=60;}
+    return{h,s,l};
+  },
+
+  calcColorHarmony(items) {
+    const colors = items.map(i => this.parseColor(i.color)).filter(c => c !== null);
+    if (colors.length < 2) return { score: -1, label: '', level: '', colors: colors };
+    const nonNeutral = colors.filter(c => !this.neutralColors.has(c));
+    if (nonNeutral.length <= 1) return { score: 95, label: '经典百搭 · 中性色组合', level: 'excellent', colors };
+    let totalDiff = 0, count = 0;
+    for (let i = 0; i < nonNeutral.length; i++) {
+      for (let j = i+1; j < nonNeutral.length; j++) {
+        const h1 = this.hexToHsl(nonNeutral[i]), h2 = this.hexToHsl(nonNeutral[j]);
+        let diff = Math.abs(h1.h - h2.h);
+        if (diff > 180) diff = 360 - diff;
+        totalDiff += diff; count++;
+      }
+    }
+    const avgDiff = totalDiff / count;
+    let score, label, level;
+    if (avgDiff >= 150 && avgDiff <= 210) { score = 90; label = '互补色 · 视觉冲击'; level = 'excellent'; }
+    else if (avgDiff >= 30 && avgDiff < 150) { score = 75; label = '邻近色 · 和谐自然'; level = 'good'; }
+    else if (avgDiff > 210 && avgDiff < 330) { score = 70; label = '对比色 · 个性鲜明'; level = 'good'; }
+    else { score = 55; label = '同色系 · 层次不足'; level = 'fair'; }
+    return { score, label, level, colors };
   },
 
   registerSW() {
@@ -82,6 +159,7 @@ const App = {
     if (view === 'stats') this.renderStats();
   },
 
+  // ===== 统计卡片 =====
   renderStatsRow() {
     if (!this.overview) return;
     const o = this.overview;
@@ -94,6 +172,7 @@ const App = {
     document.getElementById('statsRow').innerHTML = html;
   },
 
+  // ===== 衣橱 =====
   renderCategoryBar() {
     document.getElementById('categoryBar').innerHTML = this.categories.map(c =>
       `<button class="chip ${this.currentCategory === c ? 'active' : ''}" onclick="App.setCategory('${c}')">${c}</button>`
@@ -164,6 +243,7 @@ const App = {
     }).join('');
   },
 
+  // ===== 添加/编辑衣物 =====
   openAddModal() {
     this.editingId = null;
     this.uploadedImage = null;
@@ -260,6 +340,7 @@ const App = {
     }
   },
 
+  // ===== 衣物详情 =====
   async viewClothing(id) {
     try {
       const item = await API.getClothingDetail(id);
@@ -298,8 +379,9 @@ const App = {
     }
   },
 
-  editFromDetail() {},
+  editFromDetail() {}, // 由 viewClothing 动态绑定
 
+  // ===== 日历 =====
   async renderCalendar() {
     const year = this.calendarDate.getFullYear(), month = this.calendarDate.getMonth();
     document.getElementById('calendarTitle').textContent = `${year}年${month + 1}月`;
@@ -336,11 +418,13 @@ const App = {
     this.renderCalendar();
   },
 
+  // ===== 穿搭记录 =====
   async openOutfitForDate(dateStr) {
     this.currentOutfitDate = dateStr;
     this.selectedOutfitItems = [];
     document.getElementById('outfitModalTitle').textContent = `记录穿搭 · ${dateStr}`;
 
+    // 加载当天已有穿搭
     try {
       const existing = await API.getOutfitByDate(dateStr);
       if (existing) this.selectedOutfitItems = existing.items.map(i => i.id);
@@ -379,6 +463,7 @@ const App = {
     }
   },
 
+  // ===== 智能搭配 =====
   generateOutfit() {
     const needCategories = ['上衣', '裤子', '鞋子'];
     const slots = [];
@@ -394,6 +479,23 @@ const App = {
       ? slots.map(s => `<div class="outfit-slot"><div class="outfit-slot-img">${s.item.image_path ? `<img src="${s.item.image_path}">` : `<div style="opacity:0.3;width:40px;height:40px">${this.categoryIcons[s.category] || this.categoryIcons['上衣']}</div>`}</div><div class="outfit-slot-label">${s.category} · ${s.item.name}</div></div>`).join('')
       : '<p style="color:var(--text-secondary)">先添加一些衣服再来搭配吧</p>';
     document.getElementById('saveOutfitBtn').style.display = slots.length > 0 ? 'inline-flex' : 'none';
+
+    // v1.0.2 颜色搭配评分
+    const harmonyArea = document.getElementById('colorHarmonyArea');
+    if (slots.length >= 2) {
+      const harmony = this.calcColorHarmony(slots.map(s => s.item));
+      if (harmony.score > 0) {
+        document.getElementById('colorDots').innerHTML = harmony.colors.map(c => `<div class="color-dot" style="background:${c}"></div>`).join('');
+        const el = document.getElementById('colorHarmony');
+        el.className = 'color-harmony ' + harmony.level;
+        el.textContent = `${harmony.label} · ${harmony.score}分`;
+        harmonyArea.style.display = 'block';
+      } else {
+        harmonyArea.style.display = 'none';
+      }
+    } else {
+      harmonyArea.style.display = 'none';
+    }
   },
 
   async saveGeneratedOutfit() {
@@ -409,27 +511,32 @@ const App = {
     }
   },
 
+  // ===== 统计页 =====
   async renderStats() {
     try {
       const [cats, seasons, mostWorn, bestValue, underutilized] = await Promise.all([
         API.getCategories(), API.getSeasons(), API.getMostWorn(10), API.getBestValue(10), API.getUnderutilized()
       ]);
 
+      // 分类分布
       const maxCat = Math.max(...cats.map(c => c.count), 1);
       document.getElementById('categoryChart').innerHTML = cats.map(c =>
         `<div class="bar-row"><div class="bar-label">${c.category}</div><div class="bar-track"><div class="bar-fill" style="width:${c.count / maxCat * 100}%">${c.count}</div></div></div>`
       ).join('') || '<p style="color:var(--text-secondary);font-size:13px">暂无数据</p>';
 
+      // 季节分布
       const maxSeason = Math.max(...seasons.map(s => s.count), 1);
       document.getElementById('seasonChart').innerHTML = seasons.map(s =>
         `<div class="bar-row"><div class="bar-label">${s.season}</div><div class="bar-track"><div class="bar-fill accent" style="width:${s.count / maxSeason * 100}%">${s.count}</div></div></div>`
       ).join('') || '<p style="color:var(--text-secondary);font-size:13px">暂无数据</p>';
 
+      // 穿着频率
       const maxWorn = Math.max(...mostWorn.map(i => i.worn_count), 1);
       document.getElementById('wornChart').innerHTML = mostWorn.length > 0
         ? mostWorn.map((item, idx) => `<div class="bar-row"><div class="bar-label wide">${idx + 1}. ${item.name}</div><div class="bar-track"><div class="bar-fill green" style="width:${item.worn_count / maxWorn * 100}%">${item.worn_count}次</div></div></div>`).join('')
         : '<p style="color:var(--text-secondary);font-size:13px">还没有穿搭记录</p>';
 
+      // 性价比
       document.getElementById('valueChart').innerHTML = bestValue.length > 0
         ? bestValue.map((item, idx) => {
             const rating = item.value_rating || { color: '#999' };
@@ -437,6 +544,7 @@ const App = {
           }).join('')
         : '<p style="color:var(--text-secondary);font-size:13px">还没有穿着记录</p>';
 
+      // 待提升
       document.getElementById('underutilizedChart').innerHTML = underutilized.length > 0
         ? underutilized.slice(0, 10).map(item =>
             `<div class="bar-row"><div class="bar-label wide" title="${item.name}">${item.name}</div><div class="bar-track"><div class="bar-fill accent" style="width:${Math.min(100, item.worn_count / 5 * 100)}%">穿${item.worn_count}次 · ¥${item.cost_per_wear}/次</div></div></div>`
@@ -447,10 +555,11 @@ const App = {
     }
   },
 
+  // ===== 数据导出 =====
   async exportData() {
     try {
       const [wardrobe, outfits] = await Promise.all([API.getClothing(), API.getOutfits()]);
-      const data = { wardrobe, outfits, exportAt: new Date().toISOString(), version: '1.0.1' };
+      const data = { wardrobe, outfits, exportAt: new Date().toISOString(), version: '1.0.2' };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -462,6 +571,7 @@ const App = {
     }
   },
 
+  // ===== 工具 =====
   closeModal(id) { document.getElementById(id).classList.remove('show'); },
   showToast(msg, type = '') {
     const toast = document.getElementById('toast');

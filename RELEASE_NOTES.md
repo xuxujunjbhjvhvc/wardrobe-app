@@ -1,5 +1,32 @@
 # 电子衣橱 · 版本发布记录
 
+## v1.0.6 (2026-09-30)
+
+### 新增功能
+- 📊 **月度穿搭报告**
+  - 统计页最前面新增全宽月度报告卡片，月份可前后切换
+  - 四大指标卡片：穿搭天数、总穿次、平均单次成本、新购衣物数
+  - 本月最常穿 Top 5 衣物排行（显示图片、名称、本月穿次）
+  - 分类穿着占比分析
+  - 与上月对比：穿搭天数变化、总穿次变化（上升绿色箭头/下降红色箭头）
+  - 每日穿搭趋势柱状图（显示每天穿搭数和衣物件数）
+  - 本月新购衣物统计（数量+总价值）
+  - 渐变背景卡片设计，响应式布局，深色模式适配
+
+### API变更
+- 新增 `GET /api/stats/monthly-report?month=YYYY-MM` 月度报告接口
+  - 返回：month、outfitDays、totalOutfits、totalWorn、mostWorn(Top5)、categoryBreakdown、newPurchases(count+totalValue+items)、avgCostPerWear、comparedToLastMonth(outfitDaysChange/totalWornChange/lastOutfitDays/lastTotalWorn)、dailyTrend
+
+### 技术改进
+- 🔧 后端 stats.js 新增月度报告完整查询逻辑
+- 🔧 前端 api.js 新增 getMonthlyReport 封装
+- 🔧 前端 app.js 新增 reportMonth 状态、changeReportMonth、renderMonthlyReport 方法
+- 🔧 前端 style.css 新增月度报告专属样式（渐变卡片、指标卡片、趋势柱状图）
+- 📊 健康检查接口版本号同步更新为1.0.6
+- 📝 导出版本号同步更新为1.0.6
+
+---
+
 ## v1.0.5 (2026-09-30)
 
 ### 新增功能

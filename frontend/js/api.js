@@ -17,6 +17,7 @@ const API = {
     }
   },
 
+  // 衣物
   getClothing(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/clothing${qs ? '?' + qs : ''}`);
@@ -31,6 +32,10 @@ const API = {
   getNeedsWash() { return this.request('/clothing/needs-wash/list'); },
   getTags() { return this.request('/clothing/tags/all'); },
 
+  // 数据导入
+  importData(data) { return this.request('/import', { method: 'POST', body: JSON.stringify(data) }); },
+
+  // 穿搭
   getOutfits(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/outfits${qs ? '?' + qs : ''}`);
@@ -39,6 +44,7 @@ const API = {
   saveOutfit(data) { return this.request('/outfits', { method: 'POST', body: JSON.stringify(data) }); },
   deleteOutfit(id) { return this.request(`/outfits/${id}`, { method: 'DELETE' }); },
 
+  // 统计
   getOverview() { return this.request('/stats/overview'); },
   getCategories() { return this.request('/stats/categories'); },
   getSeasons() { return this.request('/stats/seasons'); },
@@ -48,7 +54,9 @@ const API = {
   getMonthlyTrend() { return this.request('/stats/monthly-trend'); },
   getColors() { return this.request('/stats/colors'); },
   getDepreciation() { return this.request('/stats/depreciation'); },
+  getMonthlyReport(month) { return this.request(`/stats/monthly-report${month ? '?month=' + month : ''}`); },
 
+  // 购物清单
   getShopping(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/shopping${qs ? '?' + qs : ''}`);
@@ -58,10 +66,9 @@ const API = {
   deleteShoppingItem(id) { return this.request(`/shopping/${id}`, { method: 'DELETE' }); },
   purchaseShoppingItem(id) { return this.request(`/shopping/${id}/purchase`, { method: 'POST' }); },
   unpurchaseShoppingItem(id) { return this.request(`/shopping/${id}/unpurchase`, { method: 'POST' }); },
-  clearPurchasedItems() { return this.request('/shopping/purchased/clear', { method: 'DELETE' }); },
+  clearPurchased() { return this.request('/shopping/purchased/clear', { method: 'DELETE' }); },
 
-  importData(data) { return this.request('/import', { method: 'POST', body: JSON.stringify(data) }); },
-
+  // 上传图片（转base64后直接存，简化处理）
   async uploadImage(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();

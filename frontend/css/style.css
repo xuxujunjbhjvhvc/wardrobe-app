@@ -25,6 +25,7 @@
 [data-theme="dark"] .clothing-badge{background:rgba(38,35,32,.9);color:var(--text)}
 [data-theme="dark"] .icon-btn{background:rgba(38,35,32,.95);color:var(--text)}
 [data-theme="dark"] .modal-overlay{background:rgba(0,0,0,.6)}
+[data-theme="dark"] .shopping-item{background:var(--surface)}
 .color-harmony{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;margin:12px 0}
 .color-harmony.excellent{background:#E8F0E4;color:#5A7A4D}
 .color-harmony.good{background:#FBF3DE;color:#A08030}
@@ -217,3 +218,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .wash-action-btn{padding:4px 10px;border-radius:12px;border:1px solid var(--danger);background:transparent;color:var(--danger);font-size:11px;cursor:pointer;transition:all .2s;font-family:inherit}
 .wash-action-btn:hover{background:var(--danger);color:white}
+.shopping-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.shopping-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.shopping-stat{background:var(--surface);border-radius:var(--radius-sm);padding:16px;text-align:center;box-shadow:var(--shadow-sm)}
+.shopping-stat-value{font-size:22px;font-weight:700;color:var(--primary)}
+.shopping-stat-label{font-size:11px;color:var(--text-secondary);margin-top:2px}
+.shopping-filter{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.shopping-list{display:flex;flex-direction:column;gap:10px}
+.shopping-item{background:var(--surface);border-radius:var(--radius-sm);padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-sm);transition:all .2s;animation:cardFadeIn .3s ease-out}
+.shopping-item:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.shopping-item.purchased{opacity:0.5}
+.shopping-item.purchased .shopping-item-name{text-decoration:line-through}
+.shopping-item-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;background:transparent}
+.shopping-item-check:hover{border-color:var(--success)}
+.shopping-item.purchased .shopping-item-check{background:var(--success);border-color:var(--success);color:white;font-size:12px}
+.shopping-item-info{flex:1;min-width:0}
+.shopping-item-name{font-size:14px;font-weight:500;margin-bottom:2px}
+.shopping-item-meta{font-size:11px;color:var(--text-secondary);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.shopping-item-price{font-size:14px;font-weight:600;color:var(--accent);flex-shrink:0}
+.shopping-item-priority{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:500}
+.shopping-item-priority.high{background:#FBE8E8;color:var(--danger)}
+.shopping-item-priority.medium{background:#FBF3DE;color:var(--warning)}
+.shopping-item-priority.low{background:#E8F0E4;color:var(--success)}
+.shopping-item-actions{display:flex;gap:4px;opacity:0;transition:opacity .2s}
+.shopping-item:hover .shopping-item-actions{opacity:1}
+@media(max-width:768px){.shopping-summary{grid-template-columns:repeat(2,1fr)}.shopping-item{padding:12px}}

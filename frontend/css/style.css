@@ -10,7 +10,6 @@
   --radius: 16px; --radius-sm: 10px; --radius-xs: 6px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
-/* ===== v1.0.2 深色模式 ===== */
 [data-theme="dark"]{--bg:#1A1816;--surface:#262320;--surface-alt:#2F2C28;--surface-hover:#35312C;--text:#E8E2D8;--text-secondary:#9A938A;--text-tertiary:#6B655D;--primary:#C4B08A;--primary-dark:#A89468;--primary-light:#D4C4A0;--primary-bg:#3A3428;--accent:#D48B7A;--accent-light:#E0A898;--accent-bg:#3A2A25;--success:#8FB580;--warning:#E0C070;--danger:#D48080;--border:#3A3630;--shadow-sm:0 1px 3px rgba(0,0,0,.3);--shadow:0 2px 12px rgba(0,0,0,.4);--shadow-md:0 4px 20px rgba(0,0,0,.5);--shadow-lg:0 8px 32px rgba(0,0,0,.6)}
 [data-theme="dark"] .header{background:rgba(38,35,32,.85)}
 [data-theme="dark"] .upload-area{background:var(--surface-alt)}
@@ -26,7 +25,6 @@
 [data-theme="dark"] .clothing-badge{background:rgba(38,35,32,.9);color:var(--text)}
 [data-theme="dark"] .icon-btn{background:rgba(38,35,32,.95);color:var(--text)}
 [data-theme="dark"] .modal-overlay{background:rgba(0,0,0,.6)}
-/* ===== v1.0.2 颜色搭配评分 ===== */
 .color-harmony{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;margin:12px 0}
 .color-harmony.excellent{background:#E8F0E4;color:#5A7A4D}
 .color-harmony.good{background:#FBF3DE;color:#A08030}
@@ -210,3 +208,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 @keyframes cardFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .btn:active{transform:scale(.97)}
 .chip:active{transform:scale(.95)}
+.wash-chip{font-size:12px;padding:5px 12px;border-radius:20px;background:var(--surface);color:var(--text-secondary);border:1px solid var(--border);cursor:pointer;transition:all .2s;font-family:inherit}
+.wash-chip:hover{border-color:var(--warning);color:var(--warning)}
+.wash-chip.active{background:var(--warning);color:#fff;border-color:var(--warning)}
+.wash-badge{position:absolute;top:8px;left:8px;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:600;background:var(--danger);color:white;backdrop-filter:blur(4px);z-index:2}
+.wash-indicator{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--danger);font-weight:500}
+.wash-indicator::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--danger);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.wash-action-btn{padding:4px 10px;border-radius:12px;border:1px solid var(--danger);background:transparent;color:var(--danger);font-size:11px;cursor:pointer;transition:all .2s;font-family:inherit}
+.wash-action-btn:hover{background:var(--danger);color:white}

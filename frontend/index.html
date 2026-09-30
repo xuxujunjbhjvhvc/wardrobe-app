@@ -16,7 +16,7 @@
 
 <header class="header">
   <div class="header-inner">
-    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0.8</span></div>
+    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0.9</span></div>
     <nav class="nav-tabs" id="navTabs">
       <button class="nav-tab active" data-view="wardrobe">衣橱</button>
       <button class="nav-tab" data-view="calendar">日历</button>
@@ -35,10 +35,8 @@
 </header>
 
 <main class="main">
-  <!-- 统计卡片行 -->
   <div class="stats-row" id="statsRow"></div>
 
-  <!-- 衣橱视图 -->
   <div class="view active" id="view-wardrobe">
     <div class="toolbar">
       <div class="chip-row" id="categoryBar"></div>
@@ -76,7 +74,6 @@
     <div class="wardrobe-grid" id="wardrobeGrid"></div>
   </div>
 
-  <!-- 日历视图 -->
   <div class="view" id="view-calendar">
     <div class="calendar-header">
       <div class="calendar-title" id="calendarTitle">2026年9月</div>
@@ -95,13 +92,10 @@
     </div>
   </div>
 
-  <!-- 搭配视图 -->
   <div class="view" id="view-generator">
     <div class="outfit-generator">
       <h2>智能搭配</h2>
       <p>根据天气和你的衣橱，智能推荐最适合的穿搭</p>
-
-      <!-- v1.0.7 天气控制面板 -->
       <div class="weather-control-panel">
         <div class="weather-control-row">
           <div class="weather-temp-control">
@@ -124,10 +118,7 @@
         </div>
         <div class="weather-tip" id="weatherTip">☀️ 舒适 18-25°C · 大多数衣物都适合穿着</div>
       </div>
-
       <div class="outfit-preview" id="outfitPreview"></div>
-
-      <!-- v1.0.7 天气适配度 -->
       <div id="weatherScoreArea" style="display:none">
         <div class="weather-score-card">
           <div class="weather-score-label">天气适配度</div>
@@ -135,20 +126,16 @@
           <div class="weather-score-bar"><div class="weather-score-fill" id="weatherScoreFill"></div></div>
         </div>
       </div>
-
       <div id="colorHarmonyArea" style="display:none">
         <div class="color-dots" id="colorDots"></div>
         <div class="color-harmony" id="colorHarmony"></div>
       </div>
-
-      <!-- v1.0.7 穿搭建议 -->
       <div id="weatherTipsArea" style="display:none">
         <div class="weather-tips-card">
           <div class="weather-tips-title">💡 穿搭建议</div>
           <ul class="weather-tips-list" id="weatherTipsList"></ul>
         </div>
       </div>
-
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px">
         <button class="btn btn-accent" onclick="App.generateOutfit()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
@@ -160,7 +147,6 @@
     </div>
   </div>
 
-  <!-- 统计视图 -->
   <div class="view" id="view-stats">
     <div class="stats-grid">
       <div class="stats-card monthly-report-card" style="grid-column:1/-1">
@@ -195,7 +181,6 @@
     </div>
   </div>
 
-  <!-- 购物清单视图 -->
   <div class="view" id="view-shopping">
     <div class="shopping-header">
       <div class="shopping-summary" id="shoppingSummary"></div>
@@ -212,7 +197,6 @@
     <div class="shopping-list" id="shoppingList"></div>
   </div>
 
-  <!-- 收藏搭配视图 -->
   <div class="view" id="view-saved">
     <div class="saved-header">
       <h3 style="margin:0">⭐ 我的收藏搭配</h3>
@@ -222,7 +206,6 @@
   </div>
 </main>
 
-<!-- 添加/编辑衣物弹窗 -->
 <div class="modal-overlay" id="addModal">
   <div class="modal">
     <div class="modal-header"><div class="modal-title" id="modalTitle">添加衣服</div><button class="modal-close" onclick="App.closeModal('addModal')">&times;</button></div>
@@ -234,6 +217,13 @@
           <div style="font-size:13px;color:var(--text-secondary)" id="uploadText">点击上传衣服照片</div>
         </div>
         <img id="uploadPreview" class="upload-preview" style="display:none">
+        <div class="ai-remove-bg-row" id="aiRemoveBgRow" style="display:none;margin-top:8px">
+          <button type="button" class="btn btn-ai btn-sm" id="aiRemoveBgBtn" onclick="App.removeBackgroundAI()">✨ AI抠图 · 变平整</button>
+          <div class="ai-progress" id="aiProgress" style="display:none">
+            <div class="ai-spinner"></div>
+            <span id="aiProgressText">AI正在抠图中...</span>
+          </div>
+        </div>
         <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="App.handleImageUpload(this)">
       </div>
       <div class="form-group"><label class="form-label">名称 *</label><input type="text" class="form-input" id="clothingName" placeholder="例如：白色基础款T恤"></div>
@@ -285,7 +275,6 @@
   </div>
 </div>
 
-<!-- 穿搭记录弹窗 -->
 <div class="modal-overlay" id="outfitModal">
   <div class="modal modal-lg">
     <div class="modal-header"><div class="modal-title" id="outfitModalTitle">记录穿搭</div><button class="modal-close" onclick="App.closeModal('outfitModal')">&times;</button></div>
@@ -311,7 +300,6 @@
   </div>
 </div>
 
-<!-- 衣物详情弹窗 -->
 <div class="modal-overlay" id="detailModal">
   <div class="modal">
     <div class="modal-header"><div class="modal-title">衣服详情</div><button class="modal-close" onclick="App.closeModal('detailModal')">&times;</button></div>
@@ -324,7 +312,6 @@
   </div>
 </div>
 
-<!-- 数据导入弹窗 -->
 <div class="modal-overlay" id="importModal">
   <div class="modal">
     <div class="modal-header"><div class="modal-title">数据导入</div><button class="modal-close" onclick="App.closeModal('importModal')">&times;</button></div>
@@ -363,7 +350,6 @@
   </div>
 </div>
 
-<!-- 购物清单添加/编辑弹窗 -->
 <div class="modal-overlay" id="shoppingModal">
   <div class="modal">
     <div class="modal-header"><div class="modal-title" id="shoppingModalTitle">添加购物项</div><button class="modal-close" onclick="App.closeModal('shoppingModal')">&times;</button></div>

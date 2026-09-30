@@ -16,7 +16,7 @@
 
 <header class="header">
   <div class="header-inner">
-    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0.2</span></div>
+    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0.3</span></div>
     <nav class="nav-tabs" id="navTabs">
       <button class="nav-tab active" data-view="wardrobe">衣橱</button>
       <button class="nav-tab" data-view="calendar">日历</button>
@@ -25,6 +25,7 @@
     </nav>
     <div class="header-actions">
       <button class="theme-toggle" id="themeToggle" title="切换深色/浅色模式" onclick="App.toggleTheme()"></button>
+      <button class="btn btn-outline btn-icon" title="数据导入" onclick="App.openImportModal()">&#8593;</button>
       <button class="btn btn-outline btn-icon" title="数据导出" onclick="App.exportData()">&#8595;</button>
       <button class="btn btn-primary" onclick="App.openAddModal()">+ 添加衣服</button>
     </div>
@@ -41,6 +42,10 @@
     </div>
     <div class="chip-row" style="margin-bottom:16px" id="seasonBar"></div>
     <div class="chip-row tag-filter-row" id="tagFilterBar" style="margin-bottom:16px;display:none"></div>
+    <div class="chip-row" id="washFilterBar" style="margin-bottom:16px">
+      <button class="chip wash-chip active" data-wash="all" onclick="App.setWashFilter('all')">全部</button>
+      <button class="chip wash-chip" data-wash="needs" onclick="App.setWashFilter('needs')">待清洗 <span id="washCountBadge" style="display:none"></span></button>
+    </div>
     <div class="sort-bar">
       <span class="sort-label">排序：</span>
       <button class="sort-chip active" data-sort="recent" onclick="App.setSort('recent')">最新</button>
@@ -138,6 +143,7 @@
       </div>
       <div class="form-group"><label class="form-label">材质</label><input type="text" class="form-input" id="clothingMaterial" placeholder="例如：纯棉、羊毛"></div>
       <div class="form-group"><label class="form-label">标签 <span style="font-weight:400;color:var(--text-secondary);font-size:11px">用逗号分隔，例如：通勤,百搭,新买</span></label><input type="text" class="form-input" id="clothingTags" placeholder="例如：通勤,百搭,新买"></div>
+      <div class="form-group"><label class="form-label">洗衣提醒 <span style="font-weight:400;color:var(--text-secondary);font-size:11px">穿几次后提醒清洗，0为不提醒</span></label><input type="number" class="form-input" id="clothingWashThreshold" placeholder="3" min="0" max="30"></div>
       <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="clothingNote" placeholder="其他信息..."></textarea></div>
     </div>
     <div class="modal-footer">
@@ -177,8 +183,47 @@
     <div class="modal-header"><div class="modal-title">衣服详情</div><button class="modal-close" onclick="App.closeModal('detailModal')">&times;</button></div>
     <div class="modal-body" id="detailBody"></div>
     <div class="modal-footer">
+      <button class="btn wash-action-btn" id="detailWashBtn" onclick="App.washFromDetail()" style="display:none;margin-right:auto">标记已清洗</button>
       <button class="btn btn-outline" onclick="App.closeModal('detailModal')">关闭</button>
       <button class="btn btn-primary" id="detailEditBtn" onclick="App.editFromDetail()">编辑</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">数据导入</div><button class="modal-close" onclick="App.closeModal('importModal')">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">选择备份文件（JSON格式）</label>
+        <div class="upload-area" onclick="document.getElementById('importFileInput').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div style="font-size:13px;color:var(--text-secondary)" id="importFileName">点击选择备份文件</div>
+        </div>
+        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="App.handleImportFile(this)">
+      </div>
+      <div class="form-group" id="importPreview" style="display:none">
+        <div class="detail-item" style="margin-bottom:12px">
+          <div class="detail-item-label">导入预览</div>
+          <div class="detail-item-value" id="importPreviewText"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">导入模式</label>
+        <div style="display:flex;gap:12px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+            <input type="radio" name="importMode" value="merge" checked> 合并（保留现有数据）
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+            <input type="radio" name="importMode" value="replace"> 覆盖（清空后导入）
+          </label>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--warning)">⚠️ 覆盖模式会删除所有现有数据，请谨慎操作</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="App.closeModal('importModal')">取消</button>
+      <button class="btn btn-primary" id="importConfirmBtn" onclick="App.confirmImport()" disabled>开始导入</button>
     </div>
   </div>
 </div>

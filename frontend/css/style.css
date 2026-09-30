@@ -10,6 +10,7 @@
   --radius: 16px; --radius-sm: 10px; --radius-xs: 6px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
+/* ===== v1.0.2 深色模式 ===== */
 [data-theme="dark"]{--bg:#1A1816;--surface:#262320;--surface-alt:#2F2C28;--surface-hover:#35312C;--text:#E8E2D8;--text-secondary:#9A938A;--text-tertiary:#6B655D;--primary:#C4B08A;--primary-dark:#A89468;--primary-light:#D4C4A0;--primary-bg:#3A3428;--accent:#D48B7A;--accent-light:#E0A898;--accent-bg:#3A2A25;--success:#8FB580;--warning:#E0C070;--danger:#D48080;--border:#3A3630;--shadow-sm:0 1px 3px rgba(0,0,0,.3);--shadow:0 2px 12px rgba(0,0,0,.4);--shadow-md:0 4px 20px rgba(0,0,0,.5);--shadow-lg:0 8px 32px rgba(0,0,0,.6)}
 [data-theme="dark"] .header{background:rgba(38,35,32,.85)}
 [data-theme="dark"] .upload-area{background:var(--surface-alt)}
@@ -25,7 +26,7 @@
 [data-theme="dark"] .clothing-badge{background:rgba(38,35,32,.9);color:var(--text)}
 [data-theme="dark"] .icon-btn{background:rgba(38,35,32,.95);color:var(--text)}
 [data-theme="dark"] .modal-overlay{background:rgba(0,0,0,.6)}
-[data-theme="dark"] .shopping-item{background:var(--surface)}
+/* ===== v1.0.2 颜色搭配评分 ===== */
 .color-harmony{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;margin:12px 0}
 .color-harmony.excellent{background:#E8F0E4;color:#5A7A4D}
 .color-harmony.good{background:#FBF3DE;color:#A08030}
@@ -41,6 +42,8 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased;padding-bottom:var(--safe-bottom)}
+
+/* Header */
 .header{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
 .header-inner{max-width:1280px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px}
 .logo{font-size:20px;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:10px;white-space:nowrap}
@@ -51,6 +54,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .nav-tab:hover{color:var(--text)}
 .nav-tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
 .header-actions{display:flex;gap:8px;align-items:center}
+
+/* Buttons */
 .btn{padding:9px 18px;border-radius:var(--radius-sm);border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;font-family:inherit;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .btn-primary{background:var(--primary);color:white}
 .btn-primary:hover{background:var(--primary-dark);transform:translateY(-1px);box-shadow:var(--shadow-md)}
@@ -61,7 +66,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .btn-sm{padding:6px 12px;font-size:12px}
 .btn-icon{width:36px;height:36px;padding:0;justify-content:center;border-radius:var(--radius-sm)}
 .btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important}
+
+/* Main */
 .main{max-width:1280px;margin:0 auto;padding:24px 28px}
+
+/* Stats Row */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
 .stat-card{background:var(--surface);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:14px;transition:transform 0.2s}
 .stat-card:hover{transform:translateY(-2px)}
@@ -74,9 +83,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .stat-label{font-size:12px;color:var(--text-secondary);margin-bottom:2px}
 .stat-value{font-size:24px;font-weight:700}
 .stat-sub{font-size:11px;color:var(--text-tertiary);margin-top:2px}
+
+/* Views */
 .view{display:none}
 .view.active{display:block;animation:fadeIn 0.3s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Toolbar */
 .toolbar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
 .chip-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .chip{padding:7px 14px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:12px;cursor:pointer;transition:all 0.2s;color:var(--text-secondary);font-family:inherit;white-space:nowrap}
@@ -85,10 +98,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .chip.active-sm{background:var(--primary-bg);color:var(--primary);border-color:var(--primary-light)}
 .search-input{flex:1;min-width:180px;max-width:280px;padding:8px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-family:inherit;outline:none;transition:border-color 0.2s}
 .search-input:focus{border-color:var(--primary)}
+
+/* Sort bar */
 .sort-bar{display:flex;gap:8px;align-items:center;margin-bottom:16px}
 .sort-label{font-size:12px;color:var(--text-secondary)}
 .sort-chip{padding:5px 12px;border-radius:14px;background:transparent;border:1px solid var(--border);font-size:11px;cursor:pointer;color:var(--text-secondary);font-family:inherit;transition:all 0.2s}
 .sort-chip.active{background:var(--primary-bg);color:var(--primary);border-color:var(--primary-light)}
+
+/* Wardrobe Grid */
 .wardrobe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
 .clothing-card{background:var(--surface);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm);transition:all 0.25s;cursor:pointer;position:relative}
 .clothing-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
@@ -107,10 +124,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .meta-tag{padding:2px 7px;border-radius:8px;font-size:10px;background:var(--surface-alt);color:var(--text-secondary)}
 .meta-worn{margin-left:auto;font-size:10px;color:var(--text-tertiary)}
 .meta-cpw{font-size:10px;color:var(--success);font-weight:500}
+
+/* Empty State */
 .empty-state{text-align:center;padding:60px 20px;color:var(--text-secondary);grid-column:1/-1}
 .empty-icon{width:72px;height:72px;margin:0 auto 16px;opacity:0.2}
 .empty-title{font-size:16px;font-weight:500;color:var(--text);margin-bottom:6px}
 .empty-desc{font-size:13px;margin-bottom:20px}
+
+/* Calendar */
 .calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
 .calendar-title{font-size:20px;font-weight:700}
 .calendar-nav{display:flex;gap:8px;align-items:center}
@@ -127,6 +148,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .day-outfit{width:100%;flex:1;border-radius:var(--radius-xs);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--surface-alt);min-height:0}
 .day-outfit img{width:100%;height:100%;object-fit:cover}
 .day-outfit-count{font-size:9px;color:var(--text-tertiary);position:absolute;bottom:4px;right:6px}
+
+/* Outfit Generator */
 .outfit-generator{background:var(--surface);border-radius:var(--radius);padding:32px;box-shadow:var(--shadow-sm);text-align:center;margin-bottom:24px}
 .outfit-generator h2{font-size:22px;margin-bottom:8px}
 .outfit-generator p{color:var(--text-secondary);font-size:13px;margin-bottom:24px}
@@ -135,6 +158,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .outfit-slot-img{width:120px;height:120px;border-radius:var(--radius);background:var(--surface-alt);display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:8px}
 .outfit-slot-img img{width:100%;height:100%;object-fit:cover}
 .outfit-slot-label{font-size:12px;color:var(--text-secondary)}
+
+/* Stats */
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .stats-card{background:var(--surface);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-sm)}
 .stats-card h3{font-size:15px;font-weight:600;margin-bottom:16px}
@@ -147,6 +172,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .bar-fill.accent{background:linear-gradient(90deg,var(--accent),var(--accent-light))}
 .bar-fill.green{background:linear-gradient(90deg,var(--success),#A5C49A)}
 .bar-value{font-size:11px;color:var(--text-secondary);width:60px;text-align:right;flex-shrink:0}
+
+/* Modals */
 .modal-overlay{position:fixed;inset:0;background:rgba(42,39,35,0.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.25s;padding:20px}
 .modal-overlay.show{opacity:1;visibility:visible}
 .modal{background:var(--surface);border-radius:var(--radius);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;transform:translateY(16px) scale(0.98);transition:transform 0.25s}
@@ -158,6 +185,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .modal-close:hover{background:var(--border);color:var(--text)}
 .modal-body{padding:24px}
 .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0;background:var(--surface)}
+
+/* Forms */
 .form-group{margin-bottom:16px}
 .form-label{display:block;font-size:12px;font-weight:500;margin-bottom:6px;color:var(--text)}
 .form-input,.form-select,.form-textarea{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;outline:none;transition:border-color 0.2s;background:var(--surface);color:var(--text)}
@@ -168,12 +197,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .upload-area:hover{border-color:var(--primary);background:var(--primary-bg)}
 .upload-area svg{width:36px;height:36px;color:var(--text-tertiary);margin-bottom:8px}
 .upload-preview{width:100%;max-height:200px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:8px}
+
+/* Outfit select grid */
 .outfit-select-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-height:400px;overflow-y:auto;padding:4px}
 .outfit-select-item{cursor:pointer;text-align:center;padding:6px;border-radius:8px;border:1px solid var(--border);transition:all 0.2s}
 .outfit-select-item.selected{border-color:var(--primary);background:var(--primary-bg)}
 .outfit-select-item .item-img{width:100%;aspect-ratio:1;border-radius:6px;overflow:hidden;margin-bottom:4px;background:var(--surface-alt)}
 .outfit-select-item .item-img img{width:100%;height:100%;object-fit:cover}
 .outfit-select-item .item-name{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Detail modal */
 .detail-image{width:100%;max-height:280px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:16px;background:var(--surface-alt)}
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .detail-item{background:var(--surface-alt);border-radius:var(--radius-sm);padding:12px}
@@ -188,16 +221,46 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .detail-history h4{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text-secondary)}
 .history-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
 .history-item:last-child{border-bottom:none}
+
+/* Toast */
 .toast{position:fixed;bottom:calc(32px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(80px);background:var(--text);color:white;padding:12px 24px;border-radius:24px;font-size:13px;z-index:2000;transition:transform 0.3s;box-shadow:var(--shadow-lg)}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .toast.success{background:var(--success)}
 .toast.error{background:var(--danger)}
+
+/* Loading */
 .loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--text-secondary)}
 .spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:900px){.stats-row{grid-template-columns:repeat(2,1fr)}.stats-grid{grid-template-columns:1fr}}
-@media(max-width:768px){.header-inner{flex-wrap:wrap;padding:12px 16px}.nav-tabs{order:3;width:100%;justify-content:center;overflow-x:auto}.main{padding:16px}.wardrobe-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}.form-row{grid-template-columns:1fr}.search-input{max-width:none}.stat-value{font-size:20px}.calendar-day{padding:4px}.day-number{font-size:11px}.outfit-select-grid{grid-template-columns:repeat(3,1fr)}.detail-grid{grid-template-columns:1fr}}
-@media(max-width:480px){.stats-row{grid-template-columns:1fr 1fr;gap:10px}.stat-card{padding:14px}.stat-icon{width:36px;height:36px}.stat-value{font-size:18px}.outfit-slot{width:90px}.outfit-slot-img{width:90px;height:90px}}
+
+/* Responsive */
+@media(max-width:900px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .stats-grid{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .header-inner{flex-wrap:wrap;padding:12px 16px}
+  .nav-tabs{order:3;width:100%;justify-content:center;overflow-x:auto}
+  .main{padding:16px}
+  .wardrobe-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+  .form-row{grid-template-columns:1fr}
+  .search-input{max-width:none}
+  .stat-value{font-size:20px}
+  .calendar-day{padding:4px}
+  .day-number{font-size:11px}
+  .outfit-select-grid{grid-template-columns:repeat(3,1fr)}
+  .detail-grid{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .stats-row{grid-template-columns:1fr 1fr;gap:10px}
+  .stat-card{padding:14px}
+  .stat-icon{width:36px;height:36px}
+  .stat-value{font-size:18px}
+  .outfit-slot{width:90px}
+  .outfit-slot-img{width:90px;height:90px}
+}
+
+/* ===== v1.0.1 标签系统 + UI打磨 ===== */
 .tag-filter-row{flex-wrap:wrap;gap:6px}
 .tag-chip{font-size:12px;padding:5px 12px;border-radius:20px;background:var(--surface);color:var(--primary);border:1px solid var(--border);cursor:pointer;transition:all .2s;font-family:inherit}
 .tag-chip:hover{background:var(--primary-bg)}
@@ -209,6 +272,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 @keyframes cardFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .btn:active{transform:scale(.97)}
 .chip:active{transform:scale(.95)}
+
+/* ===== v1.0.3 洗衣提醒 + 数据导入 ===== */
 .wash-chip{font-size:12px;padding:5px 12px;border-radius:20px;background:var(--surface);color:var(--text-secondary);border:1px solid var(--border);cursor:pointer;transition:all .2s;font-family:inherit}
 .wash-chip:hover{border-color:var(--warning);color:var(--warning)}
 .wash-chip.active{background:var(--warning);color:#fff;border-color:var(--warning)}
@@ -218,28 +283,56 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .wash-action-btn{padding:4px 10px;border-radius:12px;border:1px solid var(--danger);background:transparent;color:var(--danger);font-size:11px;cursor:pointer;transition:all .2s;font-family:inherit}
 .wash-action-btn:hover{background:var(--danger);color:white}
-.shopping-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.shopping-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.shopping-stat{background:var(--surface);border-radius:var(--radius-sm);padding:16px;text-align:center;box-shadow:var(--shadow-sm)}
-.shopping-stat-value{font-size:22px;font-weight:700;color:var(--primary)}
-.shopping-stat-label{font-size:11px;color:var(--text-secondary);margin-top:2px}
-.shopping-filter{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+
+/* ===== v1.0.5 购物清单 ===== */
+.shopping-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.shopping-summary{display:flex;gap:20px;flex-wrap:wrap}
+.shopping-stat{display:flex;flex-direction:column;gap:2px}
+.shopping-stat-label{font-size:11px;color:var(--text-secondary)}
+.shopping-stat-value{font-size:20px;font-weight:700;color:var(--text)}
+.shopping-filter{font-size:12px;padding:5px 12px;border-radius:20px;background:var(--surface);color:var(--text-secondary);border:1px solid var(--border);cursor:pointer;transition:all .2s;font-family:inherit}
+.shopping-filter:hover{border-color:var(--primary);color:var(--primary)}
+.shopping-filter.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .shopping-list{display:flex;flex-direction:column;gap:10px}
-.shopping-item{background:var(--surface);border-radius:var(--radius-sm);padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-sm);transition:all .2s;animation:cardFadeIn .3s ease-out}
-.shopping-item:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
-.shopping-item.purchased{opacity:0.5}
+.shopping-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);transition:all .2s;animation:cardFadeIn .3s ease-out}
+.shopping-item:hover{box-shadow:var(--shadow);border-color:var(--primary-light)}
+.shopping-item.purchased{opacity:.6}
 .shopping-item.purchased .shopping-item-name{text-decoration:line-through}
-.shopping-item-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;background:transparent}
+.shopping-item-main{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.shopping-item-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;font-size:12px;color:#fff;font-weight:700}
 .shopping-item-check:hover{border-color:var(--success)}
-.shopping-item.purchased .shopping-item-check{background:var(--success);border-color:var(--success);color:white;font-size:12px}
+.shopping-item.purchased .shopping-item-check{background:var(--success);border-color:var(--success)}
 .shopping-item-info{flex:1;min-width:0}
-.shopping-item-name{font-size:14px;font-weight:500;margin-bottom:2px}
-.shopping-item-meta{font-size:11px;color:var(--text-secondary);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.shopping-item-price{font-size:14px;font-weight:600;color:var(--accent);flex-shrink:0}
-.shopping-item-priority{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:500}
-.shopping-item-priority.high{background:#FBE8E8;color:var(--danger)}
-.shopping-item-priority.medium{background:#FBF3DE;color:var(--warning)}
-.shopping-item-priority.low{background:#E8F0E4;color:var(--success)}
-.shopping-item-actions{display:flex;gap:4px;opacity:0;transition:opacity .2s}
-.shopping-item:hover .shopping-item-actions{opacity:1}
-@media(max-width:768px){.shopping-summary{grid-template-columns:repeat(2,1fr)}.shopping-item{padding:12px}}
+.shopping-item-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shopping-item-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text-secondary)}
+.shopping-priority{font-weight:600}
+.shopping-item-note{font-size:11px;color:var(--text-secondary);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shopping-item-actions{display:flex;gap:4px;flex-shrink:0}
+[data-theme="dark"] .shopping-item{background:var(--surface)}
+[data-theme="dark"] .shopping-item-check{border-color:var(--border)}
+
+/* ===== v1.0.6 月度穿搭报告 ===== */
+.monthly-report-card{background:linear-gradient(135deg,var(--primary-bg) 0%,var(--surface) 100%)}
+.monthly-report-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.monthly-report-header h3{margin:0}
+.monthly-report-nav{display:flex;align-items:center;gap:10px}
+.monthly-report-title{font-size:15px;font-weight:600;color:var(--primary);min-width:80px;text-align:center}
+.monthly-report-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.report-stat{background:var(--surface);border-radius:var(--radius-sm);padding:14px;text-align:center;border:1px solid var(--border)}
+.report-stat-value{font-size:24px;font-weight:700;color:var(--text);line-height:1.2}
+.report-stat-label{font-size:12px;color:var(--text-secondary);margin-top:4px}
+.report-stat-change{font-size:11px;margin-top:6px;font-weight:500}
+.report-stat-change.up{color:var(--success)}
+.report-stat-change.down{color:var(--danger)}
+.monthly-report-content{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.monthly-report-section h4{font-size:13px;font-weight:600;color:var(--text-secondary);margin:0 0 12px;text-transform:uppercase;letter-spacing:.5px}
+.monthly-most-worn{display:flex;flex-direction:column;gap:8px}
+.daily-trend-chart{height:140px;display:flex;align-items:flex-end}
+.daily-trend-bars{display:flex;align-items:flex-end;gap:3px;height:100%;width:100%;padding-bottom:18px;position:relative}
+.daily-trend-bar{flex:1;min-width:4px;background:var(--primary);border-radius:3px 3px 0 0;position:relative;transition:all .2s;cursor:pointer;min-height:4px;opacity:.8}
+.daily-trend-bar:hover{opacity:1;background:var(--accent)}
+.daily-trend-day{position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--text-secondary);white-space:nowrap}
+@media(max-width:640px){
+  .monthly-report-content{grid-template-columns:1fr}
+  .monthly-report-stats{grid-template-columns:repeat(2,1fr)}
+}

@@ -7,7 +7,10 @@ const App = {
   currentSeason: '全部',
   currentSort: 'recent',
   currentTag: '',
+  currentWashFilter: 'all',
   allTags: [],
+  needsWashCount: 0,
+  importData: null,
   editingId: null,
   uploadedImage: null,
   selectedOutfitItems: [],
@@ -55,7 +58,6 @@ const App = {
     }
   },
 
-  // ===== v1.0.2 颜色搭配引擎 =====
   colorMap: {
     '白':'#FFFFFF','白色':'#FFFFFF','米白':'#F5F5DC','奶白':'#FFF8E7',
     '黑':'#000000','黑色':'#000000',
@@ -133,16 +135,19 @@ const App = {
 
   async loadAll() {
     try {
-      const [wardrobe, overview, tags] = await Promise.all([
+      const [wardrobe, overview, tags, needsWash] = await Promise.all([
         API.getClothing({ sort: this.currentSort }),
         API.getOverview(),
-        API.getTags().catch(() => [])
+        API.getTags().catch(() => []),
+        API.getNeedsWash().catch(() => ({ data: [], count: 0 }))
       ]);
       this.wardrobe = wardrobe;
       this.overview = overview;
       this.allTags = tags || [];
+      this.needsWashCount = needsWash.count || 0;
       this.renderStatsRow();
       this.renderTagFilterBar();
+      this.updateWashBadge();
       this.renderWardrobe();
     } catch (err) {
       this.showToast('加载失败：' + err.message, 'error');
@@ -159,20 +164,17 @@ const App = {
     if (view === 'stats') this.renderStats();
   },
 
-  // ===== 统计卡片 =====
   renderStatsRow() {
     if (!this.overview) return;
     const o = this.overview;
-    const html = `
+    document.getElementById('statsRow').innerHTML = `
       <div class="stat-card"><div class="stat-icon brown"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10a2 2 0 002 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/></svg></div><div class="stat-info"><div class="stat-label">衣服总数</div><div class="stat-value">${o.total_clothing}</div><div class="stat-sub">总价值 ¥${o.total_value}</div></div></div>
       <div class="stat-card"><div class="stat-icon pink"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="stat-info"><div class="stat-label">穿搭记录</div><div class="stat-value">${o.total_outfits}</div><div class="stat-sub">近7天 ${o.recent_worn} 套</div></div></div>
       <div class="stat-card"><div class="stat-icon green"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div><div class="stat-info"><div class="stat-label">累计穿次</div><div class="stat-value">${o.total_worn}</div><div class="stat-sub">近7天新增 ${o.recent_added} 件</div></div></div>
       <div class="stat-card"><div class="stat-icon yellow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-info"><div class="stat-label">平均单次成本</div><div class="stat-value">¥${o.avg_cost_per_wear}</div><div class="stat-sub">总价值/总穿次</div></div></div>
     `;
-    document.getElementById('statsRow').innerHTML = html;
   },
 
-  // ===== 衣橱 =====
   renderCategoryBar() {
     document.getElementById('categoryBar').innerHTML = this.categories.map(c =>
       `<button class="chip ${this.currentCategory === c ? 'active' : ''}" onclick="App.setCategory('${c}')">${c}</button>`
@@ -202,6 +204,32 @@ const App = {
 
   setTag(tag) { this.currentTag = tag; this.renderTagFilterBar(); this.renderWardrobe(); },
 
+  setWashFilter(filter) {
+    this.currentWashFilter = filter;
+    document.querySelectorAll('.wash-chip').forEach(c => c.classList.toggle('active', c.dataset.wash === filter));
+    this.renderWardrobe();
+  },
+
+  updateWashBadge() {
+    const badge = document.getElementById('washCountBadge');
+    if (badge && this.needsWashCount > 0) {
+      badge.style.display = 'inline';
+      badge.textContent = this.needsWashCount + '件';
+    } else if (badge) {
+      badge.style.display = 'none';
+    }
+  },
+
+  async markAsWashed(id) {
+    try {
+      await API.washClothing(id);
+      this.showToast('已标记为清洗', 'success');
+      await this.loadAll();
+    } catch (err) {
+      this.showToast('操作失败', 'error');
+    }
+  },
+
   async renderWardrobe() {
     const grid = document.getElementById('wardrobeGrid');
     const search = document.getElementById('searchInput').value.toLowerCase();
@@ -209,6 +237,7 @@ const App = {
     if (this.currentCategory !== '全部') items = items.filter(i => i.category === this.currentCategory);
     if (this.currentSeason !== '全部') items = items.filter(i => i.season === this.currentSeason || i.season === '四季');
     if (this.currentTag) items = items.filter(i => (i.tags || '').split(',').map(t => t.trim()).includes(this.currentTag));
+    if (this.currentWashFilter === 'needs') items = items.filter(i => i.needs_wash);
     if (search) items = items.filter(i => (i.name || '').toLowerCase().includes(search) || (i.color || '').toLowerCase().includes(search));
 
     if (items.length === 0) {
@@ -223,8 +252,10 @@ const App = {
         <div class="clothing-image">
           ${item.image_path ? `<img src="${item.image_path}" alt="${item.name}">` : `<div class="clothing-icon">${this.categoryIcons[item.category] || this.categoryIcons['上衣']}</div>`}
           <div class="clothing-badge">${item.season}</div>
+          ${item.needs_wash ? `<div class="wash-badge">待清洗</div>` : ''}
           ${item.worn_count > 0 ? `<div class="clothing-value-badge" style="background:${rating.color}">${rating.level}</div>` : ''}
           <div class="clothing-actions">
+            ${item.needs_wash ? `<button class="icon-btn" onclick="event.stopPropagation();App.markAsWashed(${item.id})" title="标记已清洗" style="color:var(--danger)">&#129533;</button>` : ''}
             <button class="icon-btn" onclick="event.stopPropagation();App.editClothing(${item.id})" title="编辑">&#9998;</button>
             <button class="icon-btn" onclick="event.stopPropagation();App.deleteClothing(${item.id})" title="删除">&#128465;</button>
           </div>
@@ -243,12 +274,11 @@ const App = {
     }).join('');
   },
 
-  // ===== 添加/编辑衣物 =====
   openAddModal() {
     this.editingId = null;
     this.uploadedImage = null;
     document.getElementById('modalTitle').textContent = '添加衣服';
-    ['clothingName', 'clothingColor', 'clothingPrice', 'clothingBrand', 'clothingMaterial', 'clothingTags', 'clothingNote'].forEach(id => document.getElementById(id).value = '');
+    ['clothingName', 'clothingColor', 'clothingPrice', 'clothingBrand', 'clothingMaterial', 'clothingTags', 'clothingNote', 'clothingWashThreshold'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('clothingCategory').value = '上衣';
     document.getElementById('clothingSeason').value = '四季';
     document.getElementById('clothingPurchaseDate').value = '';
@@ -271,6 +301,7 @@ const App = {
     document.getElementById('clothingBrand').value = item.brand || '';
     document.getElementById('clothingMaterial').value = item.material || '';
     document.getElementById('clothingTags').value = item.tags || '';
+    document.getElementById('clothingWashThreshold').value = item.wash_threshold !== undefined ? item.wash_threshold : 3;
     document.getElementById('clothingPurchaseDate').value = item.purchase_date || '';
     document.getElementById('clothingNote').value = item.note || '';
     if (item.image_path) {
@@ -310,6 +341,7 @@ const App = {
       brand: document.getElementById('clothingBrand').value.trim(),
       material: document.getElementById('clothingMaterial').value.trim(),
       tags: document.getElementById('clothingTags').value.trim(),
+      wash_threshold: parseInt(document.getElementById('clothingWashThreshold').value) || 3,
       purchase_date: document.getElementById('clothingPurchaseDate').value,
       note: document.getElementById('clothingNote').value.trim(),
       image_path: this.uploadedImage || ''
@@ -340,7 +372,6 @@ const App = {
     }
   },
 
-  // ===== 衣物详情 =====
   async viewClothing(id) {
     try {
       const item = await API.getClothingDetail(id);
@@ -367,32 +398,36 @@ const App = {
           <div class="detail-item"><div class="detail-item-label">标签</div><div class="detail-item-value">${item.tags ? item.tags.split(',').filter(t=>t.trim()).map(t=>'<span class="detail-tag">'+t.trim()+'</span>').join('') : '—'}</div></div>
           <div class="detail-item"><div class="detail-item-label">购买日期</div><div class="detail-item-value">${item.purchase_date || '—'}</div></div>
           <div class="detail-item"><div class="detail-item-label">穿着次数</div><div class="detail-item-value">${item.worn_count} 次</div></div>
+          <div class="detail-item"><div class="detail-item-label">洗衣状态</div><div class="detail-item-value">${item.needs_wash ? '<span class="wash-indicator">待清洗（穿'+item.wash_count+'次）</span>' : '已清洗（穿'+(item.wash_count||0)+'/'+(item.wash_threshold||3)+'次）'}</div></div>
+          ${item.last_wash_date ? '<div class="detail-item"><div class="detail-item-label">上次清洗</div><div class="detail-item-value">'+item.last_wash_date+'</div></div>' : ''}
           <div class="detail-item"><div class="detail-item-label">添加时间</div><div class="detail-item-value" style="font-size:12px">${item.created_at}</div></div>
         </div>
         ${item.note ? `<div class="detail-item" style="margin-bottom:16px"><div class="detail-item-label">备注</div><div class="detail-item-value" style="font-size:13px">${item.note}</div></div>` : ''}
         <div class="detail-history"><h4>最近穿着记录</h4>${historyHtml}</div>
       `;
       document.getElementById('detailEditBtn').onclick = () => { this.closeModal('detailModal'); this.editClothing(id); };
+      const washBtn = document.getElementById('detailWashBtn');
+      if (washBtn) {
+        washBtn.style.display = item.needs_wash ? 'inline-flex' : 'none';
+        washBtn.onclick = () => { this.markAsWashed(id); this.closeModal('detailModal'); };
+      }
       document.getElementById('detailModal').classList.add('show');
     } catch (err) {
       this.showToast('加载详情失败', 'error');
     }
   },
 
-  editFromDetail() {}, // 由 viewClothing 动态绑定
+  editFromDetail() {},
 
-  // ===== 日历 =====
   async renderCalendar() {
     const year = this.calendarDate.getFullYear(), month = this.calendarDate.getMonth();
     document.getElementById('calendarTitle').textContent = `${year}年${month + 1}月`;
     const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
-
     let outfitsByDate = {};
     try {
       const outfits = await API.getOutfits({ month: monthStr });
       outfits.forEach(o => { outfitsByDate[o.date] = o; });
     } catch {}
-
     const firstDay = new Date(year, month, 1), lastDay = new Date(year, month + 1, 0);
     const startOffset = (firstDay.getDay() + 6) % 7;
     const today = new Date();
@@ -418,18 +453,14 @@ const App = {
     this.renderCalendar();
   },
 
-  // ===== 穿搭记录 =====
   async openOutfitForDate(dateStr) {
     this.currentOutfitDate = dateStr;
     this.selectedOutfitItems = [];
     document.getElementById('outfitModalTitle').textContent = `记录穿搭 · ${dateStr}`;
-
-    // 加载当天已有穿搭
     try {
       const existing = await API.getOutfitByDate(dateStr);
       if (existing) this.selectedOutfitItems = existing.items.map(i => i.id);
     } catch {}
-
     const list = document.getElementById('outfitSelectList');
     list.innerHTML = this.wardrobe.map(item => `
       <div class="outfit-select-item ${this.selectedOutfitItems.includes(item.id) ? 'selected' : ''}" onclick="App.toggleOutfitItem(${item.id},this)">
@@ -463,7 +494,6 @@ const App = {
     }
   },
 
-  // ===== 智能搭配 =====
   generateOutfit() {
     const needCategories = ['上衣', '裤子', '鞋子'];
     const slots = [];
@@ -474,13 +504,10 @@ const App = {
     const accPool = this.wardrobe.filter(i => i.category === '配饰' || i.category === '包包');
     if (accPool.length > 0 && Math.random() > 0.5) slots.push({ category: '配饰', item: accPool[Math.floor(Math.random() * accPool.length)] });
     this.generatedOutfit = slots;
-
     document.getElementById('outfitPreview').innerHTML = slots.length > 0
       ? slots.map(s => `<div class="outfit-slot"><div class="outfit-slot-img">${s.item.image_path ? `<img src="${s.item.image_path}">` : `<div style="opacity:0.3;width:40px;height:40px">${this.categoryIcons[s.category] || this.categoryIcons['上衣']}</div>`}</div><div class="outfit-slot-label">${s.category} · ${s.item.name}</div></div>`).join('')
       : '<p style="color:var(--text-secondary)">先添加一些衣服再来搭配吧</p>';
     document.getElementById('saveOutfitBtn').style.display = slots.length > 0 ? 'inline-flex' : 'none';
-
-    // v1.0.2 颜色搭配评分
     const harmonyArea = document.getElementById('colorHarmonyArea');
     if (slots.length >= 2) {
       const harmony = this.calcColorHarmony(slots.map(s => s.item));
@@ -511,40 +538,29 @@ const App = {
     }
   },
 
-  // ===== 统计页 =====
   async renderStats() {
     try {
       const [cats, seasons, mostWorn, bestValue, underutilized] = await Promise.all([
         API.getCategories(), API.getSeasons(), API.getMostWorn(10), API.getBestValue(10), API.getUnderutilized()
       ]);
-
-      // 分类分布
       const maxCat = Math.max(...cats.map(c => c.count), 1);
       document.getElementById('categoryChart').innerHTML = cats.map(c =>
         `<div class="bar-row"><div class="bar-label">${c.category}</div><div class="bar-track"><div class="bar-fill" style="width:${c.count / maxCat * 100}%">${c.count}</div></div></div>`
       ).join('') || '<p style="color:var(--text-secondary);font-size:13px">暂无数据</p>';
-
-      // 季节分布
       const maxSeason = Math.max(...seasons.map(s => s.count), 1);
       document.getElementById('seasonChart').innerHTML = seasons.map(s =>
         `<div class="bar-row"><div class="bar-label">${s.season}</div><div class="bar-track"><div class="bar-fill accent" style="width:${s.count / maxSeason * 100}%">${s.count}</div></div></div>`
       ).join('') || '<p style="color:var(--text-secondary);font-size:13px">暂无数据</p>';
-
-      // 穿着频率
       const maxWorn = Math.max(...mostWorn.map(i => i.worn_count), 1);
       document.getElementById('wornChart').innerHTML = mostWorn.length > 0
         ? mostWorn.map((item, idx) => `<div class="bar-row"><div class="bar-label wide">${idx + 1}. ${item.name}</div><div class="bar-track"><div class="bar-fill green" style="width:${item.worn_count / maxWorn * 100}%">${item.worn_count}次</div></div></div>`).join('')
         : '<p style="color:var(--text-secondary);font-size:13px">还没有穿搭记录</p>';
-
-      // 性价比
       document.getElementById('valueChart').innerHTML = bestValue.length > 0
         ? bestValue.map((item, idx) => {
             const rating = item.value_rating || { color: '#999' };
             return `<div class="bar-row"><div class="bar-label wide" title="${item.name}">${idx + 1}. ${item.name}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(10, 100 - idx * 8)}%;background:${rating.color}">¥${item.cost_per_wear}/次</div></div></div>`;
           }).join('')
         : '<p style="color:var(--text-secondary);font-size:13px">还没有穿着记录</p>';
-
-      // 待提升
       document.getElementById('underutilizedChart').innerHTML = underutilized.length > 0
         ? underutilized.slice(0, 10).map(item =>
             `<div class="bar-row"><div class="bar-label wide" title="${item.name}">${item.name}</div><div class="bar-track"><div class="bar-fill accent" style="width:${Math.min(100, item.worn_count / 5 * 100)}%">穿${item.worn_count}次 · ¥${item.cost_per_wear}/次</div></div></div>`
@@ -555,11 +571,10 @@ const App = {
     }
   },
 
-  // ===== 数据导出 =====
   async exportData() {
     try {
       const [wardrobe, outfits] = await Promise.all([API.getClothing(), API.getOutfits()]);
-      const data = { wardrobe, outfits, exportAt: new Date().toISOString(), version: '1.0.2' };
+      const data = { wardrobe, outfits, exportAt: new Date().toISOString(), version: '1.0.3' };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -571,7 +586,55 @@ const App = {
     }
   },
 
-  // ===== 工具 =====
+  openImportModal() {
+    this.importData = null;
+    document.getElementById('importFileName').textContent = '点击选择备份文件';
+    document.getElementById('importPreview').style.display = 'none';
+    document.getElementById('importConfirmBtn').disabled = true;
+    document.getElementById('importFileInput').value = '';
+    document.querySelector('input[name="importMode"][value="merge"]').checked = true;
+    document.getElementById('importModal').classList.add('show');
+  },
+
+  handleImportFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.wardrobe && !data.outfits) throw new Error('无效的备份文件');
+        this.importData = data;
+        document.getElementById('importFileName').textContent = file.name;
+        const preview = document.getElementById('importPreview');
+        preview.style.display = 'block';
+        document.getElementById('importPreviewText').textContent =
+          `衣物 ${data.wardrobe ? data.wardrobe.length : 0} 件，穿搭记录 ${data.outfits ? data.outfits.length : 0} 条`;
+        document.getElementById('importConfirmBtn').disabled = false;
+      } catch (err) {
+        this.showToast('文件解析失败：' + err.message, 'error');
+        input.value = '';
+      }
+    };
+    reader.readAsText(file);
+  },
+
+  async confirmImport() {
+    if (!this.importData) return;
+    const mode = document.querySelector('input[name="importMode"]:checked').value;
+    if (mode === 'replace' && !confirm('覆盖模式将删除所有现有数据，确定继续吗？')) return;
+    try {
+      const result = await API.importData({ ...this.importData, mode });
+      this.showToast(`导入成功：衣物 ${result.importedClothing} 件，穿搭 ${result.importedOutfits} 条`, 'success');
+      this.closeModal('importModal');
+      await this.loadAll();
+    } catch (err) {
+      this.showToast('导入失败：' + err.message, 'error');
+    }
+  },
+
+  washFromDetail() {},
+
   closeModal(id) { document.getElementById(id).classList.remove('show'); },
   showToast(msg, type = '') {
     const toast = document.getElementById('toast');

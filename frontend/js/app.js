@@ -70,6 +70,7 @@ const App = {
     }
   },
 
+  // ===== v1.0.2 颜色搭配引擎 =====
   colorMap: {
     '白':'#FFFFFF','白色':'#FFFFFF','米白':'#F5F5DC','奶白':'#FFF8E7',
     '黑':'#000000','黑色':'#000000',
@@ -178,6 +179,7 @@ const App = {
     if (view === 'saved') this.loadSavedOutfits();
   },
 
+  // ===== 统计卡片 =====
   renderStatsRow() {
     if (!this.overview) return;
     const o = this.overview;
@@ -190,6 +192,7 @@ const App = {
     document.getElementById('statsRow').innerHTML = html;
   },
 
+  // ===== 衣橱 =====
   renderCategoryBar() {
     document.getElementById('categoryBar').innerHTML = this.categories.map(c =>
       `<button class="chip ${this.currentCategory === c ? 'active' : ''}" onclick="App.setCategory('${c}')">${c}</button>`
@@ -305,6 +308,7 @@ const App = {
     }).join('');
   },
 
+  // ===== 添加/编辑衣物 =====
   openAddModal() {
     this.editingId = null;
     this.uploadedImage = null;
@@ -316,6 +320,7 @@ const App = {
     document.getElementById('clothingStatus').value = 'active';
     document.getElementById('clothingPurchaseDate').value = '';
     document.getElementById('uploadPreview').style.display = 'none';
+    document.getElementById('aiRemoveBgRow').style.display = 'none';
     document.getElementById('uploadText').textContent = '点击上传衣服照片';
     document.getElementById('addModal').classList.add('show');
   },
@@ -343,8 +348,10 @@ const App = {
       document.getElementById('uploadPreview').src = item.image_path;
       document.getElementById('uploadPreview').style.display = 'block';
       document.getElementById('uploadText').textContent = '重新上传';
+      document.getElementById('aiRemoveBgRow').style.display = 'flex';
     } else {
       document.getElementById('uploadPreview').style.display = 'none';
+    document.getElementById('aiRemoveBgRow').style.display = 'none';
       document.getElementById('uploadText').textContent = '点击上传衣服照片';
     }
     document.getElementById('addModal').classList.add('show');
@@ -358,12 +365,215 @@ const App = {
       document.getElementById('uploadPreview').src = this.uploadedImage;
       document.getElementById('uploadPreview').style.display = 'block';
       document.getElementById('uploadText').textContent = '重新上传';
+      document.getElementById('aiRemoveBgRow').style.display = 'flex';
     } catch {
       this.showToast('图片处理失败', 'error');
     }
     input.value = '';
   },
 
+
+  // ===== v1.0.9 AI 抠图 + 变平整 =====
+  aiBgRemovalModule: null,
+  aiProcessing: false,
+
+  async loadAIModule() {
+    if (this.aiBgRemovalModule) return this.aiBgRemovalModule;
+    try {
+      this.aiBgRemovalModule = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm');
+      return this.aiBgRemovalModule;
+    } catch (err) {
+      console.error('AI模块加载失败', err);
+      throw new Error('AI抠图模块加载失败，请检查网络连接');
+    }
+  },
+
+  async removeBackgroundAI() {
+    if (this.aiProcessing) return;
+    if (!this.uploadedImage) { this.showToast('请先上传图片', 'error'); return; }
+
+    this.aiProcessing = true;
+    const btn = document.getElementById('aiRemoveBgBtn');
+    const progress = document.getElementById('aiProgress');
+    const progressText = document.getElementById('aiProgressText');
+    btn.style.display = 'none';
+    progress.style.display = 'flex';
+    progressText.textContent = '正在加载AI模型（首次约40MB）...';
+
+    try {
+      const bgRemoval = await this.loadAIModule();
+      progressText.textContent = 'AI正在抠图中，请稍候...';
+
+      // dataURL -> Blob
+      const resp = await fetch(this.uploadedImage);
+      const blob = await resp.blob();
+
+      // AI抠图
+      const resultBlob = await bgRemoval.removeBackground(blob, {
+        progress: (key, current, total) => {
+          const pct = total > 0 ? Math.round(current / total * 100) : 0;
+          progressText.textContent = `AI抠图中... ${pct}%`;
+        }
+      });
+
+      progressText.textContent = '正在自动裁剪+变平整...';
+
+      // Blob -> Image -> Canvas
+      const resultDataUrl = await this.blobToDataURL(resultBlob);
+      const img = await this.loadImage(resultDataUrl);
+
+      let canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+
+      // 1. 自动裁剪透明边距
+      canvas = this.autoCropTransparent(canvas);
+
+      // 2. 变平整：旋转校正（主轴对齐）
+      canvas = this.flattenByRotation(canvas);
+
+      // 3. 输出为base64（PNG保留透明通道）
+      const finalDataUrl = canvas.toDataURL('image/png');
+      this.uploadedImage = finalDataUrl;
+
+      // 更新预览
+      document.getElementById('uploadPreview').src = finalDataUrl;
+      this.showToast('AI抠图+变平整完成', 'success');
+    } catch (err) {
+      console.error('AI抠图失败', err);
+      this.showToast('AI抠图失败：' + (err.message || '未知错误'), 'error');
+      btn.style.display = 'inline-flex';
+    } finally {
+      this.aiProcessing = false;
+      progress.style.display = 'none';
+    }
+  },
+
+  blobToDataURL(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  },
+
+  loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  },
+
+  // 自动裁剪透明边距
+  autoCropTransparent(canvas) {
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    if (w === 0 || h === 0) return canvas;
+
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const data = imgData.data;
+    let minX = w, minY = h, maxX = 0, maxY = 0;
+    let found = false;
+    const step = 2; // 隔行扫描提升性能
+
+    for (let y = 0; y < h; y += step) {
+      for (let x = 0; x < w; x += step) {
+        const alpha = data[(y * w + x) * 4 + 3];
+        if (alpha > 15) {
+          found = true;
+          if (x < minX) minX = Math.max(0, x - step);
+          if (x > maxX) maxX = Math.min(w, x + step);
+          if (y < minY) minY = Math.max(0, y - step);
+          if (y > maxY) maxY = Math.min(h, y + step);
+        }
+      }
+    }
+
+    if (!found) return canvas;
+
+    const cw = maxX - minX;
+    const ch = maxY - minY;
+    if (cw < 5 || ch < 5) return canvas;
+
+    const cropped = document.createElement('canvas');
+    cropped.width = cw;
+    cropped.height = ch;
+    cropped.getContext('2d').drawImage(canvas, minX, minY, cw, ch, 0, 0, cw, ch);
+    return cropped;
+  },
+
+  // 变平整：基于像素质心和二阶矩的主轴旋转校正
+  flattenByRotation(canvas) {
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    if (w < 20 || h < 20) return canvas;
+
+    // 降采样分析（提升性能）
+    const scale = Math.max(1, Math.floor(Math.max(w, h) / 300));
+    const sw = Math.floor(w / scale);
+    const sh = Math.floor(h / scale);
+    const small = document.createElement('canvas');
+    small.width = sw; small.height = sh;
+    small.getContext('2d').drawImage(canvas, 0, 0, sw, sh);
+
+    const imgData = small.getContext('2d').getImageData(0, 0, sw, sh);
+    const data = imgData.data;
+
+    let sumX = 0, sumY = 0, count = 0;
+    let sumXX = 0, sumYY = 0, sumXY = 0;
+
+    for (let y = 0; y < sh; y++) {
+      for (let x = 0; x < sw; x++) {
+        const alpha = data[(y * sw + x) * 4 + 3];
+        if (alpha > 15) {
+          count++;
+          sumX += x; sumY += y;
+          sumXX += x * x; sumYY += y * y; sumXY += x * y;
+        }
+      }
+    }
+
+    if (count < 50) return canvas;
+
+    const cx = sumX / count, cy = sumY / count;
+    const uXX = sumXX / count - cx * cx;
+    const uYY = sumYY / count - cy * cy;
+    const uXY = sumXY / count - cx * cy;
+
+    // 主轴角度（弧度）
+    const angle = 0.5 * Math.atan2(2 * uXY, uXX - uYY);
+    let angleDeg = angle * 180 / Math.PI;
+
+    // 角度太小不旋转
+    if (Math.abs(angleDeg) < 2.5) return canvas;
+
+    // 对齐到最近的0/90度（衣物通常是竖直或水平的）
+    let target = 0;
+    const normalized = ((angleDeg % 90) + 90) % 90;
+    if (normalized > 45) target = angleDeg - (normalized - 90);
+    else target = angleDeg - normalized;
+
+    const rotateDeg = -target;
+    const rad = rotateDeg * Math.PI / 180;
+    const sin = Math.abs(Math.sin(rad)), cos = Math.abs(Math.cos(rad));
+    const newW = Math.round(w * cos + h * sin);
+    const newH = Math.round(w * sin + h * cos);
+
+    const rotated = document.createElement('canvas');
+    rotated.width = newW;
+    rotated.height = newH;
+    const rctx = rotated.getContext('2d');
+    rctx.translate(newW / 2, newH / 2);
+    rctx.rotate(rad);
+    rctx.drawImage(canvas, -w / 2, -h / 2);
+
+    // 旋转后再次裁剪透明边距
+    return this.autoCropTransparent(rotated);
+  },
   async saveClothing() {
     const name = document.getElementById('clothingName').value.trim();
     if (!name) { this.showToast('请输入衣服名称', 'error'); return; }
@@ -409,6 +619,7 @@ const App = {
     }
   },
 
+  // ===== 衣物详情 =====
   async viewClothing(id) {
     try {
       const item = await API.getClothingDetail(id);
@@ -451,13 +662,18 @@ const App = {
         statusBtn.textContent = '状态：' + this.statusLabel(item.status || 'active');
         statusBtn.onclick = () => this.cycleItemStatus(id);
       }
+      const washBtn = document.getElementById('detailWashBtn');
+      if (washBtn) {
+        washBtn.style.display = item.needs_wash ? 'inline-flex' : 'none';
+        washBtn.onclick = () => { this.markAsWashed(id); this.closeModal('detailModal'); };
+      }
       document.getElementById('detailModal').classList.add('show');
     } catch (err) {
       this.showToast('加载详情失败', 'error');
     }
   },
 
-  editFromDetail() {},
+  editFromDetail() {}, // 由 viewClothing 动态绑定
 
   async cycleItemStatus(id) {
     const item = this.wardrobe.find(i => i.id === id) || this.currentDetailItem;
@@ -469,6 +685,7 @@ const App = {
       await API.updateClothingStatus(id, nextStatus);
       this.showToast('状态已切换为：' + this.statusLabel(nextStatus), 'success');
       await this.loadAll();
+      // 刷新详情弹窗
       if (document.getElementById('detailModal').classList.contains('show')) {
         this.viewClothing(id);
       }
@@ -477,6 +694,7 @@ const App = {
     }
   },
 
+  // ===== 日历 =====
   async renderCalendar() {
     const year = this.calendarDate.getFullYear(), month = this.calendarDate.getMonth();
     document.getElementById('calendarTitle').textContent = `${year}年${month + 1}月`;
@@ -513,11 +731,13 @@ const App = {
     this.renderCalendar();
   },
 
+  // ===== 穿搭记录 =====
   async openOutfitForDate(dateStr) {
     this.currentOutfitDate = dateStr;
     this.selectedOutfitItems = [];
     document.getElementById('outfitModalTitle').textContent = `记录穿搭 · ${dateStr}`;
 
+    // 加载当天已有穿搭
     try {
       const existing = await API.getOutfitByDate(dateStr);
       if (existing) this.selectedOutfitItems = existing.items.map(i => i.id);
@@ -556,12 +776,14 @@ const App = {
     }
   },
 
+  // ===== 智能搭配（v1.0.7 天气联动） =====
   async generateOutfit() {
     try {
       const result = await API.getWeatherRecommend(this.weatherTemp, this.weatherCondition);
       const rec = result.recommendation;
 
       if (!rec || rec.items.length === 0) {
+        // 衣橱为空时回退到随机搭配
         this.fallbackGenerateOutfit();
         return;
       }
@@ -575,6 +797,7 @@ const App = {
       document.getElementById('saveOutfitBtn').style.display = 'inline-flex';
       document.getElementById('saveCollectionBtn').style.display = 'inline-flex';
 
+      // 天气适配度
       const scoreArea = document.getElementById('weatherScoreArea');
       if (rec.avgScore > 0) {
         document.getElementById('weatherScoreValue').textContent = rec.avgScore + '%';
@@ -586,6 +809,7 @@ const App = {
         scoreArea.style.display = 'none';
       }
 
+      // 穿搭建议
       const tipsArea = document.getElementById('weatherTipsArea');
       if (result.tips && result.tips.length > 0) {
         document.getElementById('weatherTipsList').innerHTML = result.tips.map(t => `<li>${t}</li>`).join('');
@@ -594,6 +818,7 @@ const App = {
         tipsArea.style.display = 'none';
       }
 
+      // 颜色搭配评分
       const harmonyArea = document.getElementById('colorHarmonyArea');
       if (slots.length >= 2) {
         const harmony = this.calcColorHarmony(slots.map(s => s.item));
@@ -615,6 +840,7 @@ const App = {
     }
   },
 
+  // 随机搭配回退
   fallbackGenerateOutfit() {
     const needCategories = ['上衣', '裤子', '鞋子'];
     const slots = [];
@@ -650,6 +876,7 @@ const App = {
     }
   },
 
+  // v1.0.7 天气控制
   updateWeatherTempDisplay(temp) {
     this.weatherTemp = parseInt(temp);
     document.getElementById('tempDisplay').textContent = temp + '°C';
@@ -681,7 +908,7 @@ const App = {
     const today = new Date();
     const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     try {
-      await API.saveOutfit({ date: dateStr, items: this.generatedOutfit.map(s => s.item.id) });
+      await API.saveOutfit({ date: dateStr, clothing_ids: this.generatedOutfit.map(s => s.item.id) });
       this.showToast('穿搭已记录', 'success');
       await this.loadAll();
     } catch (err) {
@@ -705,6 +932,7 @@ const App = {
     }
   },
 
+  // ===== 统计页 =====
   async renderStats() {
     this.renderMonthlyReport();
     try {
@@ -712,21 +940,25 @@ const App = {
         API.getCategories(), API.getSeasons(), API.getMostWorn(10), API.getBestValue(10), API.getUnderutilized(), API.getDepreciation().catch(() => null)
       ]);
 
+      // 分类分布
       const maxCat = Math.max(...cats.map(c => c.count), 1);
       document.getElementById('categoryChart').innerHTML = cats.map(c =>
         `<div class="bar-row"><div class="bar-label">${c.category}</div><div class="bar-track"><div class="bar-fill" style="width:${c.count / maxCat * 100}%">${c.count}</div></div></div>`
       ).join('') || '<p style="color:var(--text-secondary);font-size:13px">暂无数据</p>';
 
+      // 季节分布
       const maxSeason = Math.max(...seasons.map(s => s.count), 1);
       document.getElementById('seasonChart').innerHTML = seasons.map(s =>
         `<div class="bar-row"><div class="bar-label">${s.season}</div><div class="bar-track"><div class="bar-fill accent" style="width:${s.count / maxSeason * 100}%">${s.count}</div></div></div>`
       ).join('') || '<p style="color:var(--text-secondary);font-size:13px">暂无数据</p>';
 
+      // 穿着频率
       const maxWorn = Math.max(...mostWorn.map(i => i.worn_count), 1);
       document.getElementById('wornChart').innerHTML = mostWorn.length > 0
         ? mostWorn.map((item, idx) => `<div class="bar-row"><div class="bar-label wide">${idx + 1}. ${item.name}</div><div class="bar-track"><div class="bar-fill green" style="width:${item.worn_count / maxWorn * 100}%">${item.worn_count}次</div></div></div>`).join('')
         : '<p style="color:var(--text-secondary);font-size:13px">还没有穿搭记录</p>';
 
+      // 性价比
       document.getElementById('valueChart').innerHTML = bestValue.length > 0
         ? bestValue.map((item, idx) => {
             const rating = item.value_rating || { color: '#999' };
@@ -734,12 +966,14 @@ const App = {
           }).join('')
         : '<p style="color:var(--text-secondary);font-size:13px">还没有穿着记录</p>';
 
+      // 待提升
       document.getElementById('underutilizedChart').innerHTML = underutilized.length > 0
         ? underutilized.slice(0, 10).map(item =>
             `<div class="bar-row"><div class="bar-label wide" title="${item.name}">${item.name}</div><div class="bar-track"><div class="bar-fill accent" style="width:${Math.min(100, item.worn_count / 5 * 100)}%">穿${item.worn_count}次 · ¥${item.cost_per_wear}/次</div></div></div>`
           ).join('')
         : '<p style="color:var(--text-secondary);font-size:13px">没有待提升的衣物，继续保持！</p>';
 
+      // v1.0.4 折旧分析
       if (depreciation && depreciation.totalItems > 0) {
         const d = depreciation;
         document.getElementById('depreciationSummary').innerHTML =
@@ -762,6 +996,7 @@ const App = {
     }
   },
 
+  // ===== v1.0.6 月度穿搭报告 =====
   changeReportMonth(delta) {
     const [y, m] = this.reportMonth.split('-').map(Number);
     const d = new Date(y, m - 1 + delta, 1);
@@ -784,6 +1019,7 @@ const App = {
         '<div class="report-stat"><div class="report-stat-value">¥' + report.avgCostPerWear + '</div><div class="report-stat-label">平均单次成本</div><div class="report-stat-change">本月穿着衣物价值/穿次</div></div>' +
         '<div class="report-stat"><div class="report-stat-value">' + report.newPurchases.count + '</div><div class="report-stat-label">新购衣物</div><div class="report-stat-change">花费 ¥' + report.newPurchases.totalValue + '</div></div>';
 
+      // 本月最常穿 Top 5
       const mostWornEl = document.getElementById('monthlyMostWorn');
       if (report.mostWorn.length > 0) {
         const maxMonthWorn = Math.max(...report.mostWorn.map(i => i.month_worn), 1);
@@ -794,6 +1030,7 @@ const App = {
         mostWornEl.innerHTML = '<p style="color:var(--text-secondary);font-size:13px">本月还没有穿搭记录</p>';
       }
 
+      // 每日穿搭趋势
       const trendEl = document.getElementById('dailyTrendChart');
       if (report.dailyTrend.length > 0) {
         const maxItems = Math.max(...report.dailyTrend.map(d => d.item_count), 1);
@@ -812,10 +1049,11 @@ const App = {
     }
   },
 
+  // ===== 数据导出 =====
   async exportData() {
     try {
       const [wardrobe, outfits] = await Promise.all([API.getClothing(), API.getOutfits()]);
-      const data = { wardrobe, outfits, exportAt: new Date().toISOString(), version: '1.0.8' };
+      const data = { wardrobe, outfits, exportAt: new Date().toISOString(), version: '1.0.9' };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -827,6 +1065,7 @@ const App = {
     }
   },
 
+  // ===== 数据导入 =====
   openImportModal() {
     this.importData = null;
     document.getElementById('importFileName').textContent = '点击选择备份文件';
@@ -874,8 +1113,9 @@ const App = {
     }
   },
 
-  washFromDetail() {},
+  washFromDetail() {}, // 由 viewClothing 动态绑定
 
+  // ===== v1.0.5 购物清单 =====
   async loadShopping() {
     try {
       const result = await API.getShopping();
@@ -1031,6 +1271,7 @@ const App = {
     }
   },
 
+  // ===== v1.0.8 收藏搭配 =====
   async loadSavedOutfits() {
     try {
       this.savedOutfits = await API.getSavedOutfits();
@@ -1086,10 +1327,11 @@ const App = {
       this.showToast('已删除', 'success');
       await this.loadSavedOutfits();
     } catch (err) {
-      this.showToast('删除失败', 'error');
+      this.showToast('删除失败：' + err.message, 'error');
     }
   },
 
+  // ===== 工具 =====
   closeModal(id) { document.getElementById(id).classList.remove('show'); },
   showToast(msg, type = '') {
     const toast = document.getElementById('toast');

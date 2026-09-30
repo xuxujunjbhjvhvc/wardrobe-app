@@ -86,10 +86,25 @@ async function initDatabase() {
       UNIQUE(outfit_id, clothing_id)
     );
   `);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS shopping_list (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      category TEXT DEFAULT '上衣',
+      estimated_price REAL DEFAULT 0,
+      priority TEXT DEFAULT 'medium',
+      status TEXT DEFAULT 'pending',
+      note TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      purchased_at TEXT DEFAULT ''
+    );
+  `);
   db.run(`CREATE INDEX IF NOT EXISTS idx_clothing_category ON clothing(category);`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_clothing_season ON clothing(season);`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_outfits_date ON outfits(date);`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_outfit_items_clothing ON outfit_items(clothing_id);`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_shopping_status ON shopping_list(status);`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_shopping_priority ON shopping_list(priority);`);
 
   // v1.0.1 迁移：添加 tags 字段
   try {

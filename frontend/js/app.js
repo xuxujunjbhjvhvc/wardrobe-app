@@ -21,6 +21,8 @@ const App = {
   shoppingFilter: 'all',
   editingShoppingId: null,
   reportMonth: new Date().toISOString().slice(0, 7),
+  weatherTemp: 22,
+  weatherCondition: '晴',
 
   categories: ['全部', '上衣', '裤子', '裙子', '鞋子', '外套', '配饰', '包包'],
   seasons: ['全部', '春', '夏', '秋', '冬', '四季'],
@@ -512,8 +514,71 @@ const App = {
     }
   },
 
-  // ===== 智能搭配 =====
-  generateOutfit() {
+  // ===== 智能搭配（v1.0.7 天气联动） =====
+  async generateOutfit() {
+    try {
+      const result = await API.getWeatherRecommend(this.weatherTemp, this.weatherCondition);
+      const rec = result.recommendation;
+
+      if (!rec || rec.items.length === 0) {
+        // 衣橱为空时回退到随机搭配
+        this.fallbackGenerateOutfit();
+        return;
+      }
+
+      const slots = rec.items.map(item => ({ category: item.category, item, weatherScore: item.weatherScore }));
+      this.generatedOutfit = slots;
+
+      document.getElementById('outfitPreview').innerHTML = slots.map(s =>
+        `<div class="outfit-slot"><div class="outfit-slot-img">${s.item.image_path ? `<img src="${s.item.image_path}">` : `<div style="opacity:0.3;width:40px;height:40px">${this.categoryIcons[s.category] || this.categoryIcons['上衣']}</div>`}</div><div class="outfit-slot-label">${s.category} · ${s.item.name}</div>${s.weatherScore ? `<div class="outfit-slot-score">适配 ${s.weatherScore}%</div>` : ''}</div>`
+      ).join('');
+      document.getElementById('saveOutfitBtn').style.display = 'inline-flex';
+
+      // 天气适配度
+      const scoreArea = document.getElementById('weatherScoreArea');
+      if (rec.avgScore > 0) {
+        document.getElementById('weatherScoreValue').textContent = rec.avgScore + '%';
+        const fill = document.getElementById('weatherScoreFill');
+        fill.style.width = rec.avgScore + '%';
+        fill.style.background = rec.avgScore >= 80 ? 'linear-gradient(90deg,#2D8B4E,#5BA876)' : rec.avgScore >= 60 ? 'linear-gradient(90deg,#D4A84B,#E8C87A)' : 'linear-gradient(90deg,#C45F5F,#D88B7A)';
+        scoreArea.style.display = 'block';
+      } else {
+        scoreArea.style.display = 'none';
+      }
+
+      // 穿搭建议
+      const tipsArea = document.getElementById('weatherTipsArea');
+      if (result.tips && result.tips.length > 0) {
+        document.getElementById('weatherTipsList').innerHTML = result.tips.map(t => `<li>${t}</li>`).join('');
+        tipsArea.style.display = 'block';
+      } else {
+        tipsArea.style.display = 'none';
+      }
+
+      // 颜色搭配评分
+      const harmonyArea = document.getElementById('colorHarmonyArea');
+      if (slots.length >= 2) {
+        const harmony = this.calcColorHarmony(slots.map(s => s.item));
+        if (harmony.score > 0) {
+          document.getElementById('colorDots').innerHTML = harmony.colors.map(c => `<div class="color-dot" style="background:${c}"></div>`).join('');
+          const el = document.getElementById('colorHarmony');
+          el.className = 'color-harmony ' + harmony.level;
+          el.textContent = `${harmony.label} · ${harmony.score}分`;
+          harmonyArea.style.display = 'block';
+        } else {
+          harmonyArea.style.display = 'none';
+        }
+      } else {
+        harmonyArea.style.display = 'none';
+      }
+    } catch (err) {
+      console.error('天气推荐失败，使用随机搭配', err);
+      this.fallbackGenerateOutfit();
+    }
+  },
+
+  // 随机搭配回退
+  fallbackGenerateOutfit() {
     const needCategories = ['上衣', '裤子', '鞋子'];
     const slots = [];
     needCategories.forEach(cat => {
@@ -528,8 +593,9 @@ const App = {
       ? slots.map(s => `<div class="outfit-slot"><div class="outfit-slot-img">${s.item.image_path ? `<img src="${s.item.image_path}">` : `<div style="opacity:0.3;width:40px;height:40px">${this.categoryIcons[s.category] || this.categoryIcons['上衣']}</div>`}</div><div class="outfit-slot-label">${s.category} · ${s.item.name}</div></div>`).join('')
       : '<p style="color:var(--text-secondary)">先添加一些衣服再来搭配吧</p>';
     document.getElementById('saveOutfitBtn').style.display = slots.length > 0 ? 'inline-flex' : 'none';
+    document.getElementById('weatherScoreArea').style.display = 'none';
+    document.getElementById('weatherTipsArea').style.display = 'none';
 
-    // v1.0.2 颜色搭配评分
     const harmonyArea = document.getElementById('colorHarmonyArea');
     if (slots.length >= 2) {
       const harmony = this.calcColorHarmony(slots.map(s => s.item));
@@ -545,6 +611,33 @@ const App = {
     } else {
       harmonyArea.style.display = 'none';
     }
+  },
+
+  // v1.0.7 天气控制
+  updateWeatherTempDisplay(temp) {
+    this.weatherTemp = parseInt(temp);
+    document.getElementById('tempDisplay').textContent = temp + '°C';
+    this.updateWeatherTip();
+  },
+
+  setWeatherCondition(condition) {
+    this.weatherCondition = condition;
+    document.querySelectorAll('.weather-btn').forEach(b => b.classList.toggle('active', b.dataset.condition === condition));
+    this.updateWeatherTip();
+  },
+
+  updateWeatherTip() {
+    const temp = this.weatherTemp;
+    let label, icon, tip;
+    if (temp < 0) { label = '极寒'; icon = '❄️'; tip = '多层穿搭：保暖内衣+毛衣+厚外套'; }
+    else if (temp < 10) { label = '寒冷'; icon = '🧥'; tip = '建议穿着保暖外套和厚底鞋'; }
+    else if (temp < 18) { label = '凉爽'; icon = '🍂'; tip = '薄外套或卫衣，早晚温差大'; }
+    else if (temp < 25) { label = '舒适'; icon = '☀️'; tip = '大多数衣物都适合穿着'; }
+    else if (temp < 30) { label = '温暖'; icon = '🌤️'; tip = '选择透气材质，浅色更清爽'; }
+    else { label = '炎热'; icon = '🔥'; tip = '棉麻透气材质，注意防晒'; }
+
+    const condTip = { '晴': '阳光充足', '多云': '云层较多', '阴': '阴天', '雨': '有雨，注意防水', '雪': '有雪，注意保暖防滑', '雾': '有雾' };
+    document.getElementById('weatherTip').textContent = `${icon} ${label} ${temp}°C · ${condTip[this.weatherCondition] || ''} · ${tip}`;
   },
 
   async saveGeneratedOutfit() {
@@ -681,7 +774,7 @@ const App = {
   async exportData() {
     try {
       const [wardrobe, outfits] = await Promise.all([API.getClothing(), API.getOutfits()]);
-      const data = { wardrobe, outfits, exportAt: new Date().toISOString(), version: '1.0.6' };
+      const data = { wardrobe, outfits, exportAt: new Date().toISOString(), version: '1.0.7' };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

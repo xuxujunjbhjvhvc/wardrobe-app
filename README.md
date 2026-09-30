@@ -2,7 +2,7 @@
 
 > 一个简洁、高功能性的个人衣橱管理应用，帮你记录每一件衣服的穿着频次，计算真实性价比。
 
-![Version](https://img.shields.io/badge/version-1.0.2-brightgreen)
+![Version](https://img.shields.io/badge/version-1.0.3-brightgreen)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-blue)
 ![License](https://img.shields.io/badge/license-MIT-orange)
 
@@ -10,9 +10,9 @@
 
 ### 📦 衣物管理
 - 衣物全生命周期管理：添加、编辑、删除、软删除
-- 详细属性：名称、分类、季节、颜色、价格、品牌、材质、购买日期、备注、标签
+- 详细属性：名称、分类、季节、颜色、价格、品牌、材质、购买日期、备注、标签、洗衣阈值
 - 照片上传（自动压缩优化）
-- 分类筛选 + 季节筛选 + 标签筛选 + 关键词搜索
+- 分类筛选 + 季节筛选 + 标签筛选 + 待清洗筛选 + 关键词搜索
 - 多种排序：最新添加、穿得最多、价格高低
 
 ### 📅 穿搭日历
@@ -36,6 +36,13 @@
 - **待提升衣物**：贵但穿得少的衣服，提醒你多穿或谨慎购买
 - **衣物详情页**：单次穿着成本、性价比评级（极佳/优秀/良好/一般/待提升）、穿着历史
 
+### 🧺 洗衣提醒
+- 基于穿着次数自动提醒清洗（默认穿3次提醒）
+- 衣橱卡片显示"待清洗"红色徽章，脉冲动画提示
+- 一键标记"已清洗"，自动重置计数并记录清洗日期
+- 衣橱页"待清洗"筛选，快速查看所有需要清洗的衣物
+- 详情页显示洗衣状态（穿X/Y次）和上次清洗日期
+
 ### 🌙 深色模式
 - 一键切换深色/浅色主题
 - localStorage 记忆用户偏好
@@ -50,6 +57,7 @@
 ### 💾 数据安全
 - SQLite 本地数据库，数据完全在你自己的设备上
 - 一键导出 JSON 备份
+- 一键导入 JSON 备份（合并/覆盖两种模式）
 - 软删除机制，防止误删
 
 ## 🏗️ 技术架构
@@ -57,11 +65,11 @@
 ```
 wardrobe/
 ├── backend/                 # 后端服务
-│   ├── server.js           # Express 入口
+│   ├── server.js           # Express 入口 + 数据导入API
 │   ├── db/
-│   │   └── database.js     # SQLite 数据库初始化
+│   │   └── database.js     # SQLite 数据库初始化 + 自动迁移
 │   ├── routes/
-│   │   ├── clothing.js     # 衣物 CRUD API
+│   │   ├── clothing.js     # 衣物 CRUD API + 洗衣提醒API
 │   │   ├── outfits.js      # 穿搭记录 API
 │   │   └── stats.js        # 统计分析 API
 │   ├── middleware/
@@ -72,7 +80,7 @@ wardrobe/
 │   └── uploads/            # 图片上传目录
 ├── frontend/                # 前端 PWA
 │   ├── index.html          # 主页面
-│   ├── css/style.css       # 样式
+│   ├── css/style.css       # 样式 + 深色模式
 │   ├── js/
 │   │   ├── api.js          # API 封装层
 │   │   └── app.js          # 主应用逻辑
@@ -80,7 +88,8 @@ wardrobe/
 │   └── sw.js               # Service Worker
 ├── package.json
 ├── .gitignore
-└── README.md
+├── README.md
+└── RELEASE_NOTES.md
 ```
 
 ### 技术栈
@@ -126,12 +135,15 @@ npm start
 ### 衣物管理
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/clothing` | 获取衣物列表（支持 category/season/search/sort/tag 参数） |
+| GET | `/api/clothing` | 获取衣物列表（支持 category/season/search/sort/tag/needsWash 参数） |
 | GET | `/api/clothing/:id` | 获取衣物详情（含穿着历史） |
-| POST | `/api/clothing` | 添加衣物（支持 tags 字段） |
-| PUT | `/api/clothing/:id` | 更新衣物（支持 tags 字段） |
+| POST | `/api/clothing` | 添加衣物（支持 tags/wash_threshold 字段） |
+| PUT | `/api/clothing/:id` | 更新衣物 |
 | DELETE | `/api/clothing/:id` | 删除衣物（软删除） |
-| POST | `/api/clothing/:id/wear` | 记录穿着一次 |
+| POST | `/api/clothing/:id/wear` | 记录穿着一次（同时累加洗衣计数） |
+| POST | `/api/clothing/:id/wash` | 标记已清洗（重置洗衣计数） |
+| POST | `/api/clothing/wash/batch` | 批量标记已清洗 |
+| GET | `/api/clothing/needs-wash/list` | 获取待清洗衣物列表 |
 | GET | `/api/clothing/tags/all` | 获取所有标签（含计数） |
 
 ### 穿搭记录
@@ -139,8 +151,8 @@ npm start
 |------|------|------|
 | GET | `/api/outfits` | 获取穿搭记录（支持 month 参数） |
 | GET | `/api/outfits/date/:date` | 获取指定日期穿搭 |
-| POST | `/api/outfits` | 创建/更新穿搭记录 |
-| DELETE | `/api/outfits/:id` | 删除穿搭记录 |
+| POST | `/api/outfits` | 创建/更新穿搭记录（自动同步洗衣计数） |
+| DELETE | `/api/outfits/:id` | 删除穿搭记录（自动扣减洗衣计数） |
 
 ### 统计分析
 | 方法 | 路径 | 说明 |
@@ -152,6 +164,11 @@ npm start
 | GET | `/api/stats/best-value` | 性价比排行 |
 | GET | `/api/stats/underutilized` | 待提升衣物 |
 | GET | `/api/stats/monthly-trend` | 月度穿搭趋势 |
+
+### 数据导入
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/import` | 导入JSON备份（支持 merge/replace 模式） |
 
 ## 🧮 性价比算法
 
@@ -168,22 +185,28 @@ npm start
 
 ## 📝 更新日志
 
+### v1.0.3 (2026-09-30)
+- 🧺 **洗衣提醒系统**：基于穿着次数自动提醒清洗
+  - 每件衣物可设置洗衣阈值（默认穿3次提醒）
+  - 衣橱卡片显示"待清洗"红色徽章，脉冲动画提示
+  - 一键标记"已清洗"，自动重置计数并记录清洗日期
+  - 衣橱页"待清洗"筛选，快速查看所有需要清洗的衣物
+  - 详情页显示洗衣状态（穿X/Y次）和上次清洗日期
+  - 保存穿搭时自动累加洗衣计数，删除穿搭时自动扣减
+- 📥 **数据导入功能**：支持从JSON备份恢复数据
+  - header新增导入按钮，选择备份文件后预览
+  - 两种导入模式：合并（保留现有数据）/ 覆盖（清空后导入）
+  - 导入完成后自动刷新衣橱和统计数据
+- 🔧 数据库自动迁移：旧数据库自动添加 wash_count/wash_threshold/last_wash_date 字段
+- 📊 健康检查接口版本号同步更新
+
 ### v1.0.2 (2026-09-30)
 - 🌙 **深色模式**：一键切换深色/浅色主题，localStorage记忆偏好，页面加载无闪烁
 - 🎨 **颜色搭配建议**：智能搭配引擎基于HSL色相分析评分搭配和谐度
-  - 支持40+中文颜色名自动识别（白/黑/牛仔蓝/卡其/军绿等）
-  - 中性色（白/黑/灰/米）自动识别为百搭色
-  - 三级评分：极佳（互补色90分）/良好（邻近色75分）/一般（同色系55分）
-  - 搭配预览下方显示颜色圆点和评分标签
-- 📱 主题切换按钮集成到header，滑动开关样式
-- 🔧 深色模式下所有组件样式完整适配（弹窗/表单/日历/统计图表）
 
 ### v1.0.1 (2026-09-30)
-- 🏷️ **衣物标签系统**：支持自定义标签（逗号分隔），多标签筛选栏，标签计数统计
+- 🏷️ **衣物标签系统**：支持自定义标签，多标签筛选栏，标签计数统计
 - 🎨 **UI细节打磨**：卡片入场动画、悬停提升效果、按钮点击反馈
-- 🔧 **数据库自动迁移**：旧数据库自动添加 tags 字段，无需手动操作
-- 🔍 搜索范围扩展到标签字段
-- 🐛 修复统计页空数据显示
 
 ### v1.0.0 (2026-09-30)
 - 🎉 首个正式版本发布
@@ -192,7 +215,7 @@ npm start
 - ✅ 穿搭日历记录
 - ✅ 随机搭配生成器
 - ✅ 穿着频次统计
-- ✅ 性价比计算与评级系统
+- ✅ 性价比计算与五级评级系统
 - ✅ 待提升衣物提醒
 - ✅ PWA 支持（可安装到手机桌面）
 - ✅ 响应式设计（手机/平板/桌面）
@@ -203,12 +226,12 @@ npm start
 - [x] 衣物标签系统（自定义标签）
 - [x] 颜色搭配建议
 - [x] 深色模式
+- [x] 洗衣提醒（基于穿着次数）
+- [x] 数据导入（从其他APP迁移）
 - [ ] 天气联动穿搭推荐
-- [ ] 洗衣提醒（基于穿着次数）
 - [ ] 衣物折旧与淘汰建议
 - [ ] 购物清单与愿望单
 - [ ] 多用户/家庭共享衣橱
-- [ ] 数据导入（从其他APP迁移）
 - [ ] 桌面端 Electron 打包
 
 ## 📄 许可证

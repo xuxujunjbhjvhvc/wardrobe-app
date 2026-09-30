@@ -2,7 +2,7 @@
 
 > 一个简洁、高功能性的个人衣橱管理应用，帮你记录每一件衣服的穿着频次，计算真实性价比。
 
-![Version](https://img.shields.io/badge/version-1.0.5-brightgreen)
+![Version](https://img.shields.io/badge/version-1.0.6-brightgreen)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-blue)
 ![License](https://img.shields.io/badge/license-MIT-orange)
 
@@ -35,6 +35,7 @@
 - **性价比排行**：单次穿着成本最低的衣物（价格 ÷ 穿着次数）
 - **待提升衣物**：贵但穿得少的衣服，提醒你多穿或谨慎购买
 - **折旧分析**：智能计算衣物当前估值，三级状态（保值中/正常使用/建议淘汰），建议淘汰列表
+- **月度穿搭报告**：每月穿搭天数、总穿次、最常穿Top5、分类占比、与上月对比、每日趋势
 - **衣物详情页**：单次穿着成本、性价比评级（极佳/优秀/良好/一般/待提升）、穿着历史、当前估值、折旧状态
 
 ### 🛒 购物清单
@@ -80,7 +81,7 @@ wardrobe/
 │   ├── routes/
 │   │   ├── clothing.js     # 衣物 CRUD API + 洗衣提醒API
 │   │   ├── outfits.js      # 穿搭记录 API
-│   │   ├── stats.js        # 统计分析 API + 折旧分析API
+│   │   ├── stats.js        # 统计分析 API + 折旧分析API + 月度报告API
 │   │   └── shopping.js     # 购物清单 API
 │   ├── middleware/
 │   │   └── errorHandler.js # 统一错误处理
@@ -175,6 +176,7 @@ npm start
 | GET | `/api/stats/underutilized` | 待提升衣物 |
 | GET | `/api/stats/monthly-trend` | 月度穿搭趋势 |
 | GET | `/api/stats/depreciation` | 折旧分析（v1.0.4新增） |
+| GET | `/api/stats/monthly-report` | 月度穿搭报告（v1.0.6新增） |
 
 ### 购物清单
 | 方法 | 路径 | 说明 |
@@ -220,6 +222,18 @@ npm start
 ```
 
 ## 📝 更新日志
+
+### v1.0.6 (2026-09-30)
+- 📊 **月度穿搭报告**：每月穿搭数据全景分析
+  - 统计页最前面新增全宽月度报告卡片，月份可切换
+  - 四大指标卡片：穿搭天数、总穿次、平均单次成本、新购衣物数
+  - 本月最常穿 Top 5 衣物排行
+  - 分类穿着占比分析
+  - 与上月对比：穿搭天数变化、总穿次变化（上升/下降箭头）
+  - 每日穿搭趋势柱状图
+  - 本月新购衣物统计（数量+总价值）
+- 🔌 新增 GET /api/stats/monthly-report 月度报告API
+- 📊 健康检查接口版本号同步更新为1.0.6
 
 ### v1.0.5 (2026-09-30)
 - 🛒 **购物清单系统**：想买的衣服统一管理，不再忘记
@@ -280,7 +294,7 @@ npm start
 - [x] 数据导入（从其他APP迁移）
 - [x] 衣物折旧与淘汰建议
 - [x] 购物清单与愿望单
-- [ ] 月度穿搭报告
+- [x] 月度穿搭报告
 - [ ] 天气联动穿搭推荐
 - [ ] 多用户/家庭共享衣橱
 - [ ] 桌面端 Electron 打包

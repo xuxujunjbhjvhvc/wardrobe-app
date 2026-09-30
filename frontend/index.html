@@ -16,12 +16,13 @@
 
 <header class="header">
   <div class="header-inner">
-    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0.4</span></div>
+    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0.5</span></div>
     <nav class="nav-tabs" id="navTabs">
       <button class="nav-tab active" data-view="wardrobe">衣橱</button>
       <button class="nav-tab" data-view="calendar">日历</button>
       <button class="nav-tab" data-view="generator">搭配</button>
       <button class="nav-tab" data-view="stats">统计</button>
+      <button class="nav-tab" data-view="shopping">购物</button>
     </nav>
     <div class="header-actions">
       <button class="theme-toggle" id="themeToggle" title="切换深色/浅色模式" onclick="App.toggleTheme()"></button>
@@ -109,6 +110,21 @@
         <div class="category-bar-chart" id="depreciationChart"></div>
       </div>
     </div>
+  </div>
+
+  <div class="view" id="view-shopping">
+    <div class="shopping-header">
+      <h2 style="font-size:20px;font-weight:700;margin:0">购物清单</h2>
+      <button class="btn btn-primary" onclick="App.openShoppingModal()">+ 添加物品</button>
+    </div>
+    <div class="shopping-summary" id="shoppingSummary"></div>
+    <div class="shopping-filter" id="shoppingFilter">
+      <button class="chip active" data-filter="all" onclick="App.setShoppingFilter('all')">全部</button>
+      <button class="chip" data-filter="pending" onclick="App.setShoppingFilter('pending')">待购买</button>
+      <button class="chip" data-filter="purchased" onclick="App.setShoppingFilter('purchased')">已购买</button>
+      <button class="btn btn-outline btn-sm" style="margin-left:auto" onclick="App.clearPurchasedItems()">清除已购买</button>
+    </div>
+    <div class="shopping-list" id="shoppingList"></div>
   </div>
 </main>
 
@@ -230,6 +246,36 @@
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="App.closeModal('importModal')">取消</button>
       <button class="btn btn-primary" id="importConfirmBtn" onclick="App.confirmImport()" disabled>开始导入</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="shoppingModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="shoppingModalTitle">添加购物物品</div><button class="modal-close" onclick="App.closeModal('shoppingModal')">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">名称 *</label><input type="text" class="form-input" id="shoppingName" placeholder="例如：白色基础款T恤"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">分类</label>
+          <select class="form-select" id="shoppingCategory">
+            <option value="上衣">上衣</option><option value="裤子">裤子</option><option value="裙子">裙子</option>
+            <option value="鞋子">鞋子</option><option value="外套">外套</option><option value="配饰">配饰</option><option value="包包">包包</option><option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">预估价格（元）</label><input type="number" class="form-input" id="shoppingPrice" placeholder="0" min="0" step="0.01"></div>
+      </div>
+      <div class="form-group"><label class="form-label">优先级</label>
+        <div style="display:flex;gap:12px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="radio" name="shoppingPriority" value="high"> 高</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="radio" name="shoppingPriority" value="medium" checked> 中</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="radio" name="shoppingPriority" value="low"> 低</label>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="shoppingNote" placeholder="其他信息..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="App.closeModal('shoppingModal')">取消</button>
+      <button class="btn btn-primary" onclick="App.saveShoppingItem()">保存</button>
     </div>
   </div>
 </div>

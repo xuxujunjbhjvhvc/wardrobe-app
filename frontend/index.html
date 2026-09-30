@@ -16,13 +16,14 @@
 
 <header class="header">
   <div class="header-inner">
-    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0.7</span></div>
+    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0.8</span></div>
     <nav class="nav-tabs" id="navTabs">
       <button class="nav-tab active" data-view="wardrobe">衣橱</button>
       <button class="nav-tab" data-view="calendar">日历</button>
       <button class="nav-tab" data-view="generator">搭配</button>
       <button class="nav-tab" data-view="stats">统计</button>
-      <button class="nav-tab" data-view="shopping">购物清单</button>
+      <button class="nav-tab" data-view="shopping">购物</button>
+      <button class="nav-tab" data-view="saved">收藏</button>
     </nav>
     <div class="header-actions">
       <button class="theme-toggle" id="themeToggle" title="切换深色/浅色模式" onclick="App.toggleTheme()"></button>
@@ -45,9 +46,26 @@
     </div>
     <div class="chip-row" style="margin-bottom:16px" id="seasonBar"></div>
     <div class="chip-row tag-filter-row" id="tagFilterBar" style="margin-bottom:16px;display:none"></div>
-    <div class="chip-row" id="washFilterBar" style="margin-bottom:16px">
+    <div class="chip-row" id="washFilterBar" style="margin-bottom:12px">
       <button class="chip wash-chip active" data-wash="all" onclick="App.setWashFilter('all')">全部</button>
       <button class="chip wash-chip" data-wash="needs" onclick="App.setWashFilter('needs')">待清洗 <span id="washCountBadge" style="display:none"></span></button>
+    </div>
+    <div class="chip-row" id="occasionFilterBar" style="margin-bottom:12px">
+      <button class="chip occasion-chip active" data-occasion="全部" onclick="App.setOccasion('全部')">全部场合</button>
+      <button class="chip occasion-chip" data-occasion="工作" onclick="App.setOccasion('工作')">💼 工作</button>
+      <button class="chip occasion-chip" data-occasion="休闲" onclick="App.setOccasion('休闲')">👕 休闲</button>
+      <button class="chip occasion-chip" data-occasion="正式" onclick="App.setOccasion('正式')">👔 正式</button>
+      <button class="chip occasion-chip" data-occasion="运动" onclick="App.setOccasion('运动')">🏃 运动</button>
+      <button class="chip occasion-chip" data-occasion="约会" onclick="App.setOccasion('约会')">💕 约会</button>
+      <button class="chip occasion-chip" data-occasion="居家" onclick="App.setOccasion('居家')">🏠 居家</button>
+      <button class="chip occasion-chip" data-occasion="旅行" onclick="App.setOccasion('旅行')">✈️ 旅行</button>
+    </div>
+    <div class="chip-row" id="statusFilterBar" style="margin-bottom:16px">
+      <button class="chip status-chip active" data-status="all" onclick="App.setItemStatus('all')">全部状态</button>
+      <button class="chip status-chip" data-status="active" onclick="App.setItemStatus('active')">✅ 正常</button>
+      <button class="chip status-chip" data-status="wishlist" onclick="App.setItemStatus('wishlist')">⭐ 种草</button>
+      <button class="chip status-chip" data-status="idle" onclick="App.setItemStatus('idle')">📦 闲置</button>
+      <button class="chip status-chip" data-status="discarded" onclick="App.setItemStatus('discarded')">🗑️ 丢弃</button>
     </div>
     <div class="sort-bar">
       <span class="sort-label">排序：</span>
@@ -136,6 +154,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
           换一套
         </button>
+        <button class="btn btn-outline" onclick="App.saveOutfitToCollection()" id="saveCollectionBtn" style="display:none">⭐ 收藏这套</button>
         <button class="btn btn-primary" onclick="App.saveGeneratedOutfit()" id="saveOutfitBtn" style="display:none">记录这套穿搭</button>
       </div>
     </div>
@@ -192,6 +211,15 @@
     </div>
     <div class="shopping-list" id="shoppingList"></div>
   </div>
+
+  <!-- 收藏搭配视图 -->
+  <div class="view" id="view-saved">
+    <div class="saved-header">
+      <h3 style="margin:0">⭐ 我的收藏搭配</h3>
+      <p style="margin:4px 0 0;color:var(--text-secondary);font-size:13px">保存喜欢的穿搭方案，随时复用</p>
+    </div>
+    <div class="saved-grid" id="savedGrid"></div>
+  </div>
 </main>
 
 <!-- 添加/编辑衣物弹窗 -->
@@ -231,6 +259,21 @@
         <div class="form-group"><label class="form-label">购买日期</label><input type="date" class="form-input" id="clothingPurchaseDate"></div>
       </div>
       <div class="form-group"><label class="form-label">材质</label><input type="text" class="form-input" id="clothingMaterial" placeholder="例如：纯棉、羊毛"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">场合</label>
+          <select class="form-select" id="clothingOccasion">
+            <option value="">不指定</option><option value="工作">💼 工作</option><option value="休闲">👕 休闲</option>
+            <option value="正式">👔 正式</option><option value="运动">🏃 运动</option><option value="约会">💕 约会</option>
+            <option value="居家">🏠 居家</option><option value="旅行">✈️ 旅行</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">状态</label>
+          <select class="form-select" id="clothingStatus">
+            <option value="active">✅ 正常</option><option value="wishlist">⭐ 种草</option>
+            <option value="idle">📦 闲置</option><option value="discarded">🗑️ 丢弃</option>
+          </select>
+        </div>
+      </div>
       <div class="form-group"><label class="form-label">标签 <span style="font-weight:400;color:var(--text-secondary);font-size:11px">用逗号分隔，例如：通勤,百搭,新买</span></label><input type="text" class="form-input" id="clothingTags" placeholder="例如：通勤,百搭,新买"></div>
       <div class="form-group"><label class="form-label">洗衣提醒 <span style="font-weight:400;color:var(--text-secondary);font-size:11px">穿几次后提醒清洗，0为不提醒</span></label><input type="number" class="form-input" id="clothingWashThreshold" placeholder="3" min="0" max="30"></div>
       <div class="form-group"><label class="form-label">备注</label><textarea class="form-textarea" id="clothingNote" placeholder="其他信息..."></textarea></div>
@@ -275,6 +318,7 @@
     <div class="modal-body" id="detailBody"></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="App.closeModal('detailModal')">关闭</button>
+      <button class="btn btn-outline" id="detailStatusBtn" onclick="App.cycleItemStatus()" title="切换衣物状态">状态：正常</button>
       <button class="btn btn-primary" id="detailEditBtn" onclick="App.editFromDetail()">编辑</button>
     </div>
   </div>

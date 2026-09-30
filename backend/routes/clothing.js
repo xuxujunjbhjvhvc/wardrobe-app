@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { db } = require('../db/database');
-const { calcCostPerWear, calcValueRating } = require('../utils/helpers');
+const { calcCostPerWear, calcValueRating, calcDepreciation } = require('../utils/helpers');
 
 router.get('/', (req, res) => {
   const { category, season, search, sort, tag, needsWash } = req.query;
@@ -35,7 +35,7 @@ router.get('/:id', (req, res) => {
   const item = db.prepare('SELECT * FROM clothing WHERE id = ?').get(req.params.id);
   if (!item) return res.status(404).json({ success: false, error: '衣物不存在' });
   const history = db.prepare('SELECT o.date, o.note FROM outfits o JOIN outfit_items oi ON o.id = oi.outfit_id WHERE oi.clothing_id = ? ORDER BY o.date DESC').all(req.params.id);
-  res.json({ success: true, data: { ...item, cost_per_wear: calcCostPerWear(item.price, item.worn_count), value_rating: calcValueRating(calcCostPerWear(item.price, item.worn_count)), needs_wash: item.wash_threshold > 0 && item.wash_count >= item.wash_threshold, wear_history: history } });
+  res.json({ success: true, data: { ...item, cost_per_wear: calcCostPerWear(item.price, item.worn_count), value_rating: calcValueRating(calcCostPerWear(item.price, item.worn_count)), needs_wash: item.wash_threshold > 0 && item.wash_count >= item.wash_threshold, depreciation: calcDepreciation(item), wear_history: history } });
 });
 
 router.post('/', (req, res) => {

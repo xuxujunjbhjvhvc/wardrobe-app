@@ -2,7 +2,7 @@
 
 > 一个简洁、高功能性的个人衣橱管理应用，帮你记录每一件衣服的穿着频次，计算真实性价比。
 
-![Version](https://img.shields.io/badge/version-1.0.4-brightgreen)
+![Version](https://img.shields.io/badge/version-1.0.5-brightgreen)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-blue)
 ![License](https://img.shields.io/badge/license-MIT-orange)
 
@@ -36,6 +36,14 @@
 - **待提升衣物**：贵但穿得少的衣服，提醒你多穿或谨慎购买
 - **折旧分析**：智能计算衣物当前估值，三级状态（保值中/正常使用/建议淘汰），建议淘汰列表
 - **衣物详情页**：单次穿着成本、性价比评级（极佳/优秀/良好/一般/待提升）、穿着历史、当前估值、折旧状态
+
+### 🛒 购物清单
+- 想买的衣服统一管理，不再忘记
+- 三级优先级（高/中/低），按重要程度排序
+- 预估价格记录，自动汇总预算
+- 一键标记已购买/撤销购买，已购买项自动划线
+- 全部/待购买/已购买三种筛选视图
+- 一键清除所有已购买记录，保持清单清爽
 
 ### 🧺 洗衣提醒
 - 基于穿着次数自动提醒清洗（默认穿3次提醒）
@@ -72,7 +80,8 @@ wardrobe/
 │   ├── routes/
 │   │   ├── clothing.js     # 衣物 CRUD API + 洗衣提醒API
 │   │   ├── outfits.js      # 穿搭记录 API
-│   │   └── stats.js        # 统计分析 API + 折旧分析API
+│   │   ├── stats.js        # 统计分析 API + 折旧分析API
+│   │   └── shopping.js     # 购物清单 API
 │   ├── middleware/
 │   │   └── errorHandler.js # 统一错误处理
 │   ├── utils/
@@ -167,6 +176,17 @@ npm start
 | GET | `/api/stats/monthly-trend` | 月度穿搭趋势 |
 | GET | `/api/stats/depreciation` | 折旧分析（v1.0.4新增） |
 
+### 购物清单
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/shopping` | 获取购物清单（支持 status/priority/category 筛选，含汇总统计） |
+| POST | `/api/shopping` | 添加购物项 |
+| PUT | `/api/shopping/:id` | 更新购物项 |
+| DELETE | `/api/shopping/:id` | 删除购物项 |
+| POST | `/api/shopping/:id/purchase` | 标记为已购买 |
+| POST | `/api/shopping/:id/unpurchase` | 撤销购买 |
+| DELETE | `/api/shopping/purchased/clear` | 清除所有已购买项 |
+
 ### 数据导入
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -200,6 +220,20 @@ npm start
 ```
 
 ## 📝 更新日志
+
+### v1.0.5 (2026-09-30)
+- 🛒 **购物清单系统**：想买的衣服统一管理，不再忘记
+  - 新增第5个主视图"购物清单"，与衣橱/日历/搭配/统计并列
+  - 三级优先级（高/中/低），按优先级自动排序
+  - 预估价格记录，顶部汇总待购买数量、已购买数量、预算合计、高优先级数量
+  - 圆形勾选框一键标记已购买/撤销购买，已购买项自动划线+半透明
+  - 全部/待购买/已购买三种筛选视图
+  - 一键清除所有已购买记录
+  - 添加/编辑弹窗：名称、分类、预估价格、优先级、备注
+- 🗄️ 新增 shopping_list 数据表
+- 🔌 新增完整购物清单 REST API（7个接口）
+- 🐛 修复统计页折旧分析变量未定义的 bug（v1.0.4遗留）
+- 📊 健康检查接口版本号同步更新为1.0.5
 
 ### v1.0.4 (2026-09-30)
 - 📉 **折旧建议系统**：智能计算衣物当前估值和折旧状态
@@ -245,9 +279,9 @@ npm start
 - [x] 洗衣提醒（基于穿着次数）
 - [x] 数据导入（从其他APP迁移）
 - [x] 衣物折旧与淘汰建议
-- [ ] 天气联动穿搭推荐
-- [ ] 购物清单与愿望单
+- [x] 购物清单与愿望单
 - [ ] 月度穿搭报告
+- [ ] 天气联动穿搭推荐
 - [ ] 多用户/家庭共享衣橱
 - [ ] 桌面端 Electron 打包
 

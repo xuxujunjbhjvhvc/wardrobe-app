@@ -20,7 +20,7 @@ app.use(express.static(frontendDir));
 app.use('/uploads', express.static(uploadsDir));
 
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, status: 'running', version: '1.0.4', timestamp: new Date().toISOString() });
+  res.json({ success: true, status: 'running', version: '1.0.5', timestamp: new Date().toISOString() });
 });
 
 async function start() {
@@ -29,9 +29,11 @@ async function start() {
   const clothingRoutes = require('./routes/clothing');
   const outfitRoutes = require('./routes/outfits');
   const statsRoutes = require('./routes/stats');
+  const shoppingRoutes = require('./routes/shopping');
   app.use('/api/clothing', clothingRoutes);
   app.use('/api/outfits', outfitRoutes);
   app.use('/api/stats', statsRoutes);
+  app.use('/api/shopping', shoppingRoutes);
 
   const { db } = require('./db/database');
   app.post('/api/import', (req, res) => {

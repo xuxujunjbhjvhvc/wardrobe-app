@@ -370,3 +370,42 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 [data-theme="dark"] .weather-score-card,[data-theme="dark"] .weather-tips-card{background:var(--surface)}
 
 .outfit-slot-score{font-size:10px;color:var(--success);font-weight:600;margin-top:2px}
+
+/* ===== v1.0.8 场合/状态筛选 ===== */
+.occasion-chip,.status-chip{padding:5px 12px;border-radius:16px;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);font-size:12px;cursor:pointer;transition:all .2s;font-family:inherit;white-space:nowrap}
+.occasion-chip:hover,.status-chip:hover{border-color:var(--primary);color:var(--primary)}
+.occasion-chip.active,.status-chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+[data-theme="dark"] .occasion-chip,[data-theme="dark"] .status-chip{background:var(--surface-alt);border-color:var(--border)}
+.occasion-badge{position:absolute;top:8px;left:8px;background:rgba(139,111,71,.9);color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;z-index:2}
+.status-badge{position:absolute;top:8px;right:8px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;z-index:2}
+.status-badge.status-wishlist{background:rgba(212,168,75,.95);color:#fff}
+.status-badge.status-idle{background:rgba(154,147,138,.95);color:#fff}
+.status-badge.status-discarded{background:rgba(196,95,95,.95);color:#fff}
+.detail-status-tag{display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:600}
+.detail-status-tag.status-active{background:#E8F0E4;color:#5A7A4D}
+.detail-status-tag.status-wishlist{background:#FBF3DE;color:#A08030}
+.detail-status-tag.status-idle{background:#EFEAE2;color:#7A736A}
+.detail-status-tag.status-discarded{background:#FBEEEA;color:#A05040}
+[data-theme="dark"] .detail-status-tag.status-active{background:#2A3525;color:#8FB580}
+[data-theme="dark"] .detail-status-tag.status-wishlist{background:#353020;color:#E0C070}
+[data-theme="dark"] .detail-status-tag.status-idle{background:#2F2C28;color:#9A938A}
+[data-theme="dark"] .detail-status-tag.status-discarded{background:#352520;color:#D48080}
+
+/* ===== v1.0.8 收藏搭配视图 ===== */
+.saved-header{margin-bottom:20px}
+.saved-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.saved-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;transition:all .2s;box-shadow:var(--shadow-sm)}
+.saved-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.saved-card-header{padding:14px 16px;border-bottom:1px solid var(--border)}
+.saved-card-name{font-size:15px;font-weight:600;color:var(--text);margin-bottom:2px}
+.saved-card-meta{font-size:12px;color:var(--text-secondary)}
+.saved-card-items{display:flex;gap:6px;padding:12px 16px;flex-wrap:wrap;align-items:center}
+.saved-item-thumb{width:48px;height:48px;border-radius:8px;overflow:hidden;background:var(--surface-alt);flex-shrink:0}
+.saved-item-thumb img{width:100%;height:100%;object-fit:cover}
+.saved-item-more{width:48px;height:48px;border-radius:8px;background:var(--surface-alt);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--text-secondary)}
+.saved-card-note{padding:0 16px 10px;font-size:12px;color:var(--text-secondary);line-height:1.5}
+.saved-card-actions{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border);background:var(--surface-hover)}
+[data-theme="dark"] .saved-card{background:var(--surface)}
+[data-theme="dark"] .saved-card-header{border-color:var(--border)}
+[data-theme="dark"] .saved-card-actions{background:var(--surface-alt);border-color:var(--border)}
+[data-theme="dark"] .saved-item-thumb,[data-theme="dark"] .saved-item-more{background:var(--surface-alt)}

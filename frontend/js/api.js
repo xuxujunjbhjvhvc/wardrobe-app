@@ -49,6 +49,17 @@ const API = {
   getColors() { return this.request('/stats/colors'); },
   getDepreciation() { return this.request('/stats/depreciation'); },
 
+  getShopping(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    return this.request(`/shopping${qs ? '?' + qs : ''}`);
+  },
+  addShoppingItem(data) { return this.request('/shopping', { method: 'POST', body: JSON.stringify(data) }); },
+  updateShoppingItem(id, data) { return this.request(`/shopping/${id}`, { method: 'PUT', body: JSON.stringify(data) }); },
+  deleteShoppingItem(id) { return this.request(`/shopping/${id}`, { method: 'DELETE' }); },
+  purchaseShoppingItem(id) { return this.request(`/shopping/${id}/purchase`, { method: 'POST' }); },
+  unpurchaseShoppingItem(id) { return this.request(`/shopping/${id}/unpurchase`, { method: 'POST' }); },
+  clearPurchasedItems() { return this.request('/shopping/purchased/clear', { method: 'DELETE' }); },
+
   importData(data) { return this.request('/import', { method: 'POST', body: JSON.stringify(data) }); },
 
   async uploadImage(file) {

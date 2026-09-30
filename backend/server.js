@@ -23,7 +23,7 @@ app.use('/uploads', express.static(uploadsDir));
 
 // 健康检查（数据库初始化前也可用）
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, status: 'running', version: '1.0.7', timestamp: new Date().toISOString() });
+  res.json({ success: true, status: 'running', version: '1.0.8', timestamp: new Date().toISOString() });
 });
 
 async function start() {
@@ -36,11 +36,13 @@ async function start() {
   const statsRoutes = require('./routes/stats');
   const shoppingRoutes = require('./routes/shopping');
   const weatherRoutes = require('./routes/weather');
+  const savedOutfitRoutes = require('./routes/savedOutfits');
   app.use('/api/clothing', clothingRoutes);
   app.use('/api/outfits', outfitRoutes);
   app.use('/api/stats', statsRoutes);
   app.use('/api/shopping', shoppingRoutes);
   app.use('/api/weather', weatherRoutes);
+  app.use('/api/saved-outfits', savedOutfitRoutes);
 
   // 数据导入 API（v1.0.3）
   const { db } = require('./db/database');

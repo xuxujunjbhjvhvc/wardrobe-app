@@ -17,7 +17,6 @@ const API = {
     }
   },
 
-  // 衣物
   getClothing(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/clothing${qs ? '?' + qs : ''}`);
@@ -27,9 +26,11 @@ const API = {
   updateClothing(id, data) { return this.request(`/clothing/${id}`, { method: 'PUT', body: JSON.stringify(data) }); },
   deleteClothing(id) { return this.request(`/clothing/${id}`, { method: 'DELETE' }); },
   wearClothing(id) { return this.request(`/clothing/${id}/wear`, { method: 'POST' }); },
+  washClothing(id) { return this.request(`/clothing/${id}/wash`, { method: 'POST' }); },
+  washClothingBatch(ids) { return this.request('/clothing/wash/batch', { method: 'POST', body: JSON.stringify({ ids }) }); },
+  getNeedsWash() { return this.request('/clothing/needs-wash/list'); },
   getTags() { return this.request('/clothing/tags/all'); },
 
-  // 穿搭
   getOutfits(params = {}) {
     const qs = new URLSearchParams(params).toString();
     return this.request(`/outfits${qs ? '?' + qs : ''}`);
@@ -38,7 +39,6 @@ const API = {
   saveOutfit(data) { return this.request('/outfits', { method: 'POST', body: JSON.stringify(data) }); },
   deleteOutfit(id) { return this.request(`/outfits/${id}`, { method: 'DELETE' }); },
 
-  // 统计
   getOverview() { return this.request('/stats/overview'); },
   getCategories() { return this.request('/stats/categories'); },
   getSeasons() { return this.request('/stats/seasons'); },
@@ -48,7 +48,8 @@ const API = {
   getMonthlyTrend() { return this.request('/stats/monthly-trend'); },
   getColors() { return this.request('/stats/colors'); },
 
-  // 上传图片（转base64后直接存，简化处理）
+  importData(data) { return this.request('/import', { method: 'POST', body: JSON.stringify(data) }); },
+
   async uploadImage(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();

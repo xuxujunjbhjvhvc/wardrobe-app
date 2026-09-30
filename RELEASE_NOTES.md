@@ -1,5 +1,31 @@
 # 电子衣橱 · 版本发布记录
 
+## v1.0.4 (2026-09-30)
+
+### 新增功能
+- 📉 **折旧建议系统**
+  - 智能计算衣物当前估值，基于购买日期和穿着次数
+  - 材质差异化折旧率：真皮/皮革1.2%/月、羊毛/羊绒1.5%/月、棉/麻2%/月、化纤2.5%/月
+  - 穿着加速折旧：每穿10次额外折旧3%，最高加速30%
+  - 最低残值保护：估值不低于原价10%，总折旧不超过90%
+  - 三级状态分类：保值中（>60%）/ 正常使用（30-60%）/ 建议淘汰（<30%）
+  - 衣物详情页新增：当前估值、折旧状态、使用时长（月）
+  - 统计页新增"折旧分析"全宽卡片
+    - 汇总指标：总原值、当前估值、累计折旧、平均折旧率
+    - 状态分布：保值中/正常使用/建议淘汰 数量统计
+    - 建议淘汰列表：按估值从低到高排序，显示估值和穿着次数
+
+### API变更
+- 新增 `GET /api/stats/depreciation` 折旧统计接口
+- `GET /api/clothing/:id` 详情接口新增 `depreciation` 字段
+
+### 技术细节
+- 后端 helpers.js 新增 calcDepreciation 折旧计算引擎
+- 前端 api.js 新增 getDepreciation 封装
+- 版本号同步更新：根package.json、backend/package.json、index.html徽章、app.js导出版本、server.js健康检查
+
+---
+
 ## v1.0.3 (2026-09-30)
 
 ### 新增功能
@@ -24,18 +50,6 @@
 - 🔧 新增 API：标记已清洗、批量清洗、待清洗列表、数据导入
 - 🔧 衣物列表 API 支持 needsWash 查询参数筛选
 - 🔧 健康检查接口版本号更新为 1.0.3
-
-### 文件变更
-- backend/db/database.js - v1.0.3 数据库迁移
-- backend/routes/clothing.js - 洗衣相关API
-- backend/routes/outfits.js - 穿搭同步wash_count
-- backend/server.js - 数据导入API
-- frontend/index.html - 导入按钮、洗衣筛选、导入弹窗
-- frontend/css/style.css - 洗衣提醒样式
-- frontend/js/api.js - 洗衣和导入API封装
-- frontend/js/app.js - 洗衣提醒逻辑 + 数据导入
-- package.json / backend/package.json - 版本号升级
-- README.md - 更新文档
 
 ---
 

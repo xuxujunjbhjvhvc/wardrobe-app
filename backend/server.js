@@ -23,7 +23,7 @@ app.use('/uploads', express.static(uploadsDir));
 
 // 健康检查（数据库初始化前也可用）
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, status: 'running', version: '1.0.8', timestamp: new Date().toISOString() });
+  res.json({ success: true, status: 'running', version: '1.0.9', timestamp: new Date().toISOString() });
 });
 
 async function start() {

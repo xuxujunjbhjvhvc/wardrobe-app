@@ -16,7 +16,7 @@
 
 <header class="header">
   <div class="header-inner">
-    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0.3</span></div>
+    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0.4</span></div>
     <nav class="nav-tabs" id="navTabs">
       <button class="nav-tab active" data-view="wardrobe">衣橱</button>
       <button class="nav-tab" data-view="calendar">日历</button>
@@ -101,6 +101,12 @@
       <div class="stats-card" style="grid-column:1/-1" id="underutilizedCard">
         <h3>待提升衣物（贵但穿得少）</h3>
         <div class="category-bar-chart" id="underutilizedChart"></div>
+      </div>
+      <div class="stats-card" style="grid-column:1/-1" id="depreciationCard">
+        <h3>折旧分析</h3>
+        <div id="depreciationSummary" style="display:flex;gap:24px;margin-bottom:16px;flex-wrap:wrap"></div>
+        <h4 style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">建议淘汰/替换</h4>
+        <div class="category-bar-chart" id="depreciationChart"></div>
       </div>
     </div>
   </div>

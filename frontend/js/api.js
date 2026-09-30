@@ -31,6 +31,15 @@ const API = {
   washClothingBatch(ids) { return this.request('/clothing/wash/batch', { method: 'POST', body: JSON.stringify({ ids }) }); },
   getNeedsWash() { return this.request('/clothing/needs-wash/list'); },
   getTags() { return this.request('/clothing/tags/all'); },
+  updateClothingStatus(id, status) { return this.request(`/clothing/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }); },
+
+  // v1.0.8 收藏搭配
+  getSavedOutfits() { return this.request('/saved-outfits'); },
+  getSavedOutfitDetail(id) { return this.request(`/saved-outfits/${id}`); },
+  saveOutfitToCollection(data) { return this.request('/saved-outfits', { method: 'POST', body: JSON.stringify(data) }); },
+  updateSavedOutfit(id, data) { return this.request(`/saved-outfits/${id}`, { method: 'PUT', body: JSON.stringify(data) }); },
+  deleteSavedOutfit(id) { return this.request(`/saved-outfits/${id}`, { method: 'DELETE' }); },
+  applySavedOutfit(id) { return this.request(`/saved-outfits/${id}/apply`, { method: 'POST' }); },
 
   // 数据导入
   importData(data) { return this.request('/import', { method: 'POST', body: JSON.stringify(data) }); },

@@ -68,6 +68,12 @@ const API = {
   unpurchaseShoppingItem(id) { return this.request(`/shopping/${id}/unpurchase`, { method: 'POST' }); },
   clearPurchased() { return this.request('/shopping/purchased/clear', { method: 'DELETE' }); },
 
+  // v1.0.7 天气联动
+  getWeatherRecommend(temp, condition) {
+    return this.request(`/weather/recommend?temp=${temp}&condition=${encodeURIComponent(condition || '晴')}`);
+  },
+  getWeatherCategories() { return this.request('/weather/categories'); },
+
   // 上传图片（转base64后直接存，简化处理）
   async uploadImage(file) {
     return new Promise((resolve, reject) => {

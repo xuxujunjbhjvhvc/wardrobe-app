@@ -47,6 +47,7 @@ const API = {
   getUnderutilized() { return this.request('/stats/underutilized'); },
   getMonthlyTrend() { return this.request('/stats/monthly-trend'); },
   getColors() { return this.request('/stats/colors'); },
+  getDepreciation() { return this.request('/stats/depreciation'); },
 
   importData(data) { return this.request('/import', { method: 'POST', body: JSON.stringify(data) }); },
 

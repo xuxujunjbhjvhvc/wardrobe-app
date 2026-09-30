@@ -1,29 +1,86 @@
 # 电子衣橱 · 版本发布记录
 
+## v1.0.7 (2026-09-30)
+
+### 新增功能
+- 🌤️ **天气联动穿搭推荐**
+  - 搭配页新增天气控制面板：温度滑块（-10°C ~ 40°C）+ 天气状况按钮（晴/多云/阴/雨/雪）
+  - 实时天气提示条，根据温度和天气状况给出穿搭建议
+  - 智能匹配引擎：季节-温度权重 + 材质保暖性匹配 + 天气功能匹配（防雨/防晒）
+  - 六档温度分类：极寒(<0°C)/寒冷(0-10°C)/凉爽(10-18°C)/舒适(18-25°C)/温暖(25-30°C)/炎热(>30°C)
+  - 17种材质保暖性评分（羊绒1.0/羊毛0.95/棉0.5/麻0.2等），自动匹配目标保暖度
+  - 雨天自动优先推荐防水材质衣物，晴天优先推荐配饰（帽子/墨镜）
+  - 穿搭适配度评分（0-100%），进度条可视化展示，颜色随分数变化
+  - 智能穿搭建议列表（多层穿搭/保暖材质/防水提醒/防晒提示等）
+  - 每件推荐衣物显示单独适配度百分比
+  - API失败时自动回退到随机搭配，保证可用性
+
+### 技术改进
+- 🔧 新增天气推荐路由 `backend/routes/weather.js`
+  - `GET /api/weather/recommend?temp=22&condition=晴` — 天气穿搭推荐
+  - `GET /api/weather/categories` — 温度分类和天气状况列表
+- 🧮 天气匹配算法：
+  - 季节-温度匹配权重（40分）
+  - 材质保暖性与目标保暖度匹配（35分）
+  - 天气功能匹配加分（防雨/防晒，最高25分）
+  - 穿着频次加权（常穿优先，最高10分）
+- 🎨 新增天气控制面板、适配度卡片、穿搭建议卡片CSS样式（含深色模式适配）
+- 📊 健康检查接口版本号同步更新为1.0.7
+
+### API变更
+- 新增 `GET /api/weather/recommend?temp=XX&condition=XX` 天气穿搭推荐
+- 新增 `GET /api/weather/categories` 温度分类列表
+
+### 文件变更
+- backend/routes/weather.js - 新增天气推荐路由
+- backend/server.js - 注册天气路由，版本号更新
+- frontend/index.html - 搭配页新增天气控制面板
+- frontend/css/style.css - 新增天气相关样式
+- frontend/js/api.js - 新增天气API方法
+- frontend/js/app.js - 重写智能搭配逻辑，新增天气控制方法
+- README.md - 更新功能说明、API列表、更新日志、路线图
+- RELEASE_NOTES.md - 新增v1.0.7发布记录
+- package.json - 版本号更新
+- backend/package.json - 版本号更新
+
+---
+
 ## v1.0.6 (2026-09-30)
 
 ### 新增功能
-- 📊 **月度穿搭报告**
-  - 统计页最前面新增全宽月度报告卡片，月份可前后切换
-  - 四大指标卡片：穿搭天数、总穿次、平均单次成本、新购衣物数
-  - 本月最常穿 Top 5 衣物排行（显示图片、名称、本月穿次）
-  - 分类穿着占比分析
-  - 与上月对比：穿搭天数变化、总穿次变化（上升绿色箭头/下降红色箭头）
-  - 每日穿搭趋势柱状图（显示每天穿搭数和衣物件数）
-  - 本月新购衣物统计（数量+总价值）
-  - 渐变背景卡片设计，响应式布局，深色模式适配
-
-### API变更
-- 新增 `GET /api/stats/monthly-report?month=YYYY-MM` 月度报告接口
-  - 返回：month、outfitDays、totalOutfits、totalWorn、mostWorn(Top5)、categoryBreakdown、newPurchases(count+totalValue+items)、avgCostPerWear、comparedToLastMonth(outfitDaysChange/totalWornChange/lastOutfitDays/lastTotalWorn)、dailyTrend
+- 📈 **月度穿搭报告**
+  - 统计页顶部新增全宽月度报告卡片，渐变背景突出显示
+  - 月份切换器（上月/下月按钮），可查看任意历史月份的穿搭数据
+  - 四大核心指标卡片：穿搭天数、总穿次、平均单次成本、新购衣物
+  - 与上月智能对比：穿搭天数变化、穿次变化（绿色上升/红色下降箭头）
+  - 本月最常穿 Top 5 排行（横向进度条，显示本月穿着次数）
+  - 每日穿搭趋势柱状图，直观展示整月穿搭活跃度
+  - 响应式布局，移动端自动切换为单列显示
 
 ### 技术改进
-- 🔧 后端 stats.js 新增月度报告完整查询逻辑
-- 🔧 前端 api.js 新增 getMonthlyReport 封装
-- 🔧 前端 app.js 新增 reportMonth 状态、changeReportMonth、renderMonthlyReport 方法
-- 🔧 前端 style.css 新增月度报告专属样式（渐变卡片、指标卡片、趋势柱状图）
+- 🔧 新增 `GET /api/stats/monthly-report` 月度报告API
+  - 返回月度总览（穿搭天数/总穿次/平均单次成本/新购统计）
+  - 本月最常穿 Top 5
+  - 分类穿着占比
+  - 与上月对比数据
+  - 每日穿搭趋势
+- 🎨 新增月度报告专属CSS样式（含深色模式适配、响应式布局）
 - 📊 健康检查接口版本号同步更新为1.0.6
-- 📝 导出版本号同步更新为1.0.6
+
+### API变更
+- 新增 `GET /api/stats/monthly-report?month=YYYY-MM` 月度穿搭报告
+
+### 文件变更
+- backend/routes/stats.js - 新增月度报告API
+- backend/server.js - 版本号更新
+- backend/package.json - 版本号更新
+- frontend/index.html - 版本徽章更新 + 月度报告卡片UI
+- frontend/css/style.css - 月度报告样式
+- frontend/js/api.js - 新增getMonthlyReport方法
+- frontend/js/app.js - 月度报告渲染逻辑 + 版本号更新
+- package.json - 版本号更新
+- README.md - 功能说明 + 更新日志 + 路线图
+- RELEASE_NOTES.md - 本文件
 
 ---
 
@@ -83,8 +140,6 @@
 - 前端 api.js 新增 getDepreciation 封装
 - 版本号同步更新：根package.json、backend/package.json、index.html徽章、app.js导出版本、server.js健康检查
 
----
-
 ## v1.0.3 (2026-09-30)
 
 ### 新增功能
@@ -109,6 +164,18 @@
 - 🔧 新增 API：标记已清洗、批量清洗、待清洗列表、数据导入
 - 🔧 衣物列表 API 支持 needsWash 查询参数筛选
 - 🔧 健康检查接口版本号更新为 1.0.3
+
+### 文件变更
+- backend/db/database.js - v1.0.3 数据库迁移
+- backend/routes/clothing.js - 洗衣相关API
+- backend/routes/outfits.js - 穿搭同步wash_count
+- backend/server.js - 数据导入API
+- frontend/index.html - 导入按钮、洗衣筛选、导入弹窗
+- frontend/css/style.css - 洗衣提醒样式
+- frontend/js/api.js - 洗衣和导入API封装
+- frontend/js/app.js - 洗衣提醒逻辑 + 数据导入
+- package.json / backend/package.json - 版本号升级
+- README.md - 更新文档
 
 ---
 

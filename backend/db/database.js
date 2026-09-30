@@ -60,6 +60,9 @@ async function initDatabase() {
       image_path TEXT DEFAULT '',
       tags TEXT DEFAULT '',
       worn_count INTEGER DEFAULT 0,
+      wash_count INTEGER DEFAULT 0,
+      wash_threshold INTEGER DEFAULT 3,
+      last_wash_date TEXT DEFAULT '',
       status TEXT DEFAULT 'active',
       created_at TEXT DEFAULT (datetime('now','localtime')),
       updated_at TEXT DEFAULT (datetime('now','localtime'))
@@ -88,7 +91,7 @@ async function initDatabase() {
   db.run(`CREATE INDEX IF NOT EXISTS idx_outfits_date ON outfits(date);`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_outfit_items_clothing ON outfit_items(clothing_id);`);
 
-  // v1.0.1 迁移：添加 tags 字段（兼容旧数据库）
+  // v1.0.1 迁移：添加 tags 字段
   try {
     var colResult = db.exec("PRAGMA table_info(clothing)");
     if (colResult.length > 0) {
@@ -99,6 +102,26 @@ async function initDatabase() {
       }
     }
   } catch (e) { console.log('[DB] 迁移检查跳过'); }
+
+  // v1.0.3 迁移：添加洗衣提醒字段
+  try {
+    var colResult2 = db.exec("PRAGMA table_info(clothing)");
+    if (colResult2.length > 0) {
+      var cols = colResult2[0].values.map(function(c) { return c[1]; });
+      if (cols.indexOf('wash_count') === -1) {
+        db.run("ALTER TABLE clothing ADD COLUMN wash_count INTEGER DEFAULT 0");
+        console.log('[DB] v1.0.3 迁移：添加 wash_count 字段');
+      }
+      if (cols.indexOf('wash_threshold') === -1) {
+        db.run("ALTER TABLE clothing ADD COLUMN wash_threshold INTEGER DEFAULT 3");
+        console.log('[DB] v1.0.3 迁移：添加 wash_threshold 字段');
+      }
+      if (cols.indexOf('last_wash_date') === -1) {
+        db.run("ALTER TABLE clothing ADD COLUMN last_wash_date TEXT DEFAULT ''");
+        console.log('[DB] v1.0.3 迁移：添加 last_wash_date 字段');
+      }
+    }
+  } catch (e) { console.log('[DB] v1.0.3 迁移检查跳过'); }
 
   saveNow();
   console.log('[DB] 初始化完成');

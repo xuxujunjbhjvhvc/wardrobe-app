@@ -16,7 +16,7 @@
 
 <header class="header">
   <div class="header-inner">
-    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0.6</span></div>
+    <div class="logo"><div class="logo-icon">W</div><span>我的衣橱</span><span class="version-badge">v1.0.7</span></div>
     <nav class="nav-tabs" id="navTabs">
       <button class="nav-tab active" data-view="wardrobe">衣橱</button>
       <button class="nav-tab" data-view="calendar">日历</button>
@@ -81,12 +81,56 @@
   <div class="view" id="view-generator">
     <div class="outfit-generator">
       <h2>智能搭配</h2>
-      <p>从你的衣橱里随机抽出一套穿搭，并给出颜色搭配建议</p>
+      <p>根据天气和你的衣橱，智能推荐最适合的穿搭</p>
+
+      <!-- v1.0.7 天气控制面板 -->
+      <div class="weather-control-panel">
+        <div class="weather-control-row">
+          <div class="weather-temp-control">
+            <label>当前温度</label>
+            <div class="temp-slider-wrap">
+              <input type="range" id="weatherTemp" min="-10" max="40" value="22" step="1" oninput="App.updateWeatherTempDisplay(this.value)">
+              <span class="temp-display" id="tempDisplay">22°C</span>
+            </div>
+          </div>
+        </div>
+        <div class="weather-control-row">
+          <label>天气状况</label>
+          <div class="weather-condition-btns" id="weatherConditionBtns">
+            <button class="weather-btn active" data-condition="晴" onclick="App.setWeatherCondition('晴')">☀️ 晴</button>
+            <button class="weather-btn" data-condition="多云" onclick="App.setWeatherCondition('多云')">⛅ 多云</button>
+            <button class="weather-btn" data-condition="阴" onclick="App.setWeatherCondition('阴')">☁️ 阴</button>
+            <button class="weather-btn" data-condition="雨" onclick="App.setWeatherCondition('雨')">🌧️ 雨</button>
+            <button class="weather-btn" data-condition="雪" onclick="App.setWeatherCondition('雪')">❄️ 雪</button>
+          </div>
+        </div>
+        <div class="weather-tip" id="weatherTip">☀️ 舒适 18-25°C · 大多数衣物都适合穿着</div>
+      </div>
+
       <div class="outfit-preview" id="outfitPreview"></div>
+
+      <!-- v1.0.7 天气适配度 -->
+      <div id="weatherScoreArea" style="display:none">
+        <div class="weather-score-card">
+          <div class="weather-score-label">天气适配度</div>
+          <div class="weather-score-value" id="weatherScoreValue">--</div>
+          <div class="weather-score-bar"><div class="weather-score-fill" id="weatherScoreFill"></div></div>
+        </div>
+      </div>
+
       <div id="colorHarmonyArea" style="display:none">
         <div class="color-dots" id="colorDots"></div>
         <div class="color-harmony" id="colorHarmony"></div>
       </div>
+
+      <!-- v1.0.7 穿搭建议 -->
+      <div id="weatherTipsArea" style="display:none">
+        <div class="weather-tips-card">
+          <div class="weather-tips-title">💡 穿搭建议</div>
+          <ul class="weather-tips-list" id="weatherTipsList"></ul>
+        </div>
+      </div>
+
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px">
         <button class="btn btn-accent" onclick="App.generateOutfit()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>

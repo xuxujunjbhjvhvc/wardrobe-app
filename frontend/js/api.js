@@ -64,6 +64,7 @@ const API = {
   getColors() { return this.request('/stats/colors'); },
   getDepreciation() { return this.request('/stats/depreciation'); },
   getMonthlyReport(month) { return this.request(`/stats/monthly-report${month ? '?month=' + month : ''}`); },
+  getCapsule() { return this.request('/stats/capsule'); },
 
   // 购物清单
   getShopping(params = {}) {

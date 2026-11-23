@@ -48,8 +48,16 @@ async function start() {
   const { db } = require('./db/database');
   app.post('/api/import', (req, res) => {
     const { wardrobe = [], outfits = [], mode = 'merge' } = req.body;
-    if (!Array.isArray(wardrobe) && !Array.isArray(outfits)) {
-      return res.status(400).json({ success: false, error: '数据格式错误' });
+    // Validate the entire import envelope before any destructive replace operation.
+    if (!Array.isArray(wardrobe) || !Array.isArray(outfits)) {
+      return res.status(400).json({ success: false, error: '数据格式错误：wardrobe 和 outfits 必须都是数组' });
+    }
+    if (mode !== 'merge' && mode !== 'replace') {
+      return res.status(400).json({ success: false, error: '导入模式必须是 merge 或 replace' });
+    }
+    if (wardrobe.some(item => !item || typeof item !== 'object' || Array.isArray(item)) ||
+        outfits.some(outfit => !outfit || typeof outfit !== 'object' || Array.isArray(outfit))) {
+      return res.status(400).json({ success: false, error: '导入记录必须是对象' });
     }
     try {
       let importedClothing = 0, importedOutfits = 0, skipped = 0;

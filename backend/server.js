@@ -59,7 +59,10 @@ async function start() {
         outfits.some(outfit => !outfit || typeof outfit !== 'object' || Array.isArray(outfit))) {
       return res.status(400).json({ success: false, error: '导入记录必须是对象' });
     }
+    let transactionStarted = false;
     try {
+      db.exec('BEGIN');
+      transactionStarted = true;
       let importedClothing = 0, importedOutfits = 0, skipped = 0;
 
       if (mode === 'replace') {
@@ -111,8 +114,15 @@ async function start() {
         importedOutfits++;
       }
 
+      db.exec('COMMIT');
+      transactionStarted = false;
       res.json({ success: true, importedClothing, importedOutfits, skipped, mode });
     } catch (err) {
+      if (transactionStarted) {
+        try { db.exec('ROLLBACK'); } catch (rollbackError) {
+          console.error('[Import] rollback failed:', rollbackError);
+        }
+      }
       res.status(500).json({ success: false, error: '导入失败: ' + err.message });
     }
   });

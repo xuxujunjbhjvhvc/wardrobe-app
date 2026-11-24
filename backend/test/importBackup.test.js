@@ -83,13 +83,16 @@ test('duplicate source IDs and dates reject without modification', async () => {
     assert.deepEqual(rows(raw,'SELECT count(*) FROM clothing'),[[1]]);
   } finally { raw.close(); }
 });
-test('database failure rolls back destructive replacement and all linked records', async () => {
+test('database failure rolls back destructive replacement and existing clothing', async () => {
   const { raw, db }=await fixture();
   try {
+    // This scenario must pass the favorite-protection preflight to exercise
+    // a failure *inside* the transaction rather than an early rejection.
+    raw.exec('DELETE FROM saved_outfit_items; DELETE FROM saved_outfits;');
     const original=db.prepare;
     db.prepare=sql=>sql.includes('INSERT INTO clothing')?{run(){throw new Error('simulated failure');}}:original.call(db,sql);
     assert.throws(()=>importBackup(db,{wardrobe:[item(1,'new')],outfits:[],mode:'replace'}),/simulated failure/);
     assert.deepEqual(rows(raw,'SELECT id,name FROM clothing'),[[9,'existing']]);
-    assert.deepEqual(rows(raw,'SELECT count(*) FROM saved_outfit_items'),[[1]]);
+    assert.deepEqual(rows(raw,'SELECT count(*) FROM outfits'),[[0]]);
   } finally { raw.close(); }
 });

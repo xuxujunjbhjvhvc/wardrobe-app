@@ -1,4 +1,16 @@
 // 电子衣橱 - 主应用逻辑
+// Escape user-controlled values before inserting them into HTML templates.
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[ch]);
+}
+function safeImageSrc(value) {
+  const v = String(value ?? '').trim();
+  if (!/^(?:data:image\/(?:png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+|\/?uploads\/[a-zA-Z0-9._~%/-]+|https?:\/\/[^\s<>"']+|blob:[^\s<>"']+)$/i.test(v)) return '';
+  return escapeHTML(v);
+}
+
 const App = {
   wardrobe: [],
   outfits: [],
@@ -212,12 +224,25 @@ const App = {
 
   renderTagFilterBar() {
     const bar = document.getElementById('tagFilterBar');
-    if (!this.allTags || this.allTags.length === 0) { bar.style.display = 'none'; return; }
+    if (!this.allTags?.length) { bar.style.display = 'none'; bar.replaceChildren(); return; }
     bar.style.display = 'flex';
-    bar.innerHTML = '<button class="chip tag-chip ' + (this.currentTag === '' ? 'active' : '') + '" onclick="App.setTag(\'\')">全部标签</button>' +
-      this.allTags.map(t =>
-        '<button class="chip tag-chip ' + (this.currentTag === t.name ? 'active' : '') + '" onclick="App.setTag(\'' + t.name.replace(/'/g, "\\'") + '\')">' + t.name + ' <span style="opacity:.6;font-size:10px">' + t.count + '</span></button>'
-      ).join('');
+    bar.replaceChildren();
+    const all = document.createElement('button');
+    all.className = 'chip tag-chip' + (this.currentTag === '' ? ' active' : '');
+    all.textContent = '全部标签';
+    all.addEventListener('click', () => this.setTag(''));
+    bar.append(all);
+    this.allTags.forEach(tag => {
+      const btn = document.createElement('button');
+      btn.className = 'chip tag-chip' + (this.currentTag === tag.name ? ' active' : '');
+      btn.append(document.createTextNode(String(tag.name)));
+      const count = document.createElement('span');
+      count.style.cssText = 'opacity:.6;font-size:10px';
+      count.textContent = ' ' + String(tag.count || 0);
+      btn.append(count);
+      btn.addEventListener('click', () => this.setTag(tag.name));
+      bar.append(btn);
+    });
   },
 
   setTag(tag) { this.currentTag = tag; this.renderTagFilterBar(); this.renderWardrobe(); },
@@ -282,12 +307,12 @@ const App = {
       return `
       <div class="clothing-card" onclick="App.viewClothing(${item.id})">
         <div class="clothing-image">
-          ${item.image_path ? `<img src="${item.image_path}" alt="${item.name}">` : `<div class="clothing-icon">${this.categoryIcons[item.category] || this.categoryIcons['上衣']}</div>`}
-          <div class="clothing-badge">${item.season}</div>
-          ${item.occasion ? `<div class="occasion-badge">${item.occasion}</div>` : ''}
-          ${item.status && item.status !== 'active' ? `<div class="status-badge status-${item.status}">${this.statusLabel(item.status)}</div>` : ''}
+          ${safeImageSrc(item.image_path) ? `<img src="${safeImageSrc(item.image_path)}" alt="${escapeHTML(item.name)}">` : `<div class="clothing-icon">${this.categoryIcons[item.category] || this.categoryIcons['上衣']}</div>`}
+          <div class="clothing-badge">${escapeHTML(item.season)}</div>
+          ${item.occasion ? `<div class="occasion-badge">${escapeHTML(item.occasion)}</div>` : ''}
+          ${item.status && item.status !== 'active' ? `<div class="status-badge status-${escapeHTML(item.status)}">${escapeHTML(this.statusLabel(item.status))}</div>` : ''}
           ${item.needs_wash ? `<div class="wash-badge">待清洗</div>` : ''}
-          ${item.worn_count > 0 ? `<div class="clothing-value-badge" style="background:${rating.color}">${rating.level}</div>` : ''}
+          ${item.worn_count > 0 ? `<div class="clothing-value-badge" style="background:${rating.color}">${escapeHTML(rating.level)}</div>` : ''}
           <div class="clothing-actions">
             ${item.needs_wash ? `<button class="icon-btn" onclick="event.stopPropagation();App.markAsWashed(${item.id})" title="标记已清洗" style="color:var(--danger)">&#129533;</button>` : ''}
             <button class="icon-btn" onclick="event.stopPropagation();App.editClothing(${item.id})" title="编辑">&#9998;</button>
@@ -295,11 +320,11 @@ const App = {
           </div>
         </div>
         <div class="clothing-info">
-          <div class="clothing-name">${item.name}</div>
-          ${item.tags ? `<div class="clothing-tags">${item.tags.split(',').filter(t=>t.trim()).slice(0,3).map(t=>`<span class="clothing-tag">${t.trim()}</span>`).join('')}</div>` : ''}
+          <div class="clothing-name">${escapeHTML(item.name)}</div>
+          ${item.tags ? `<div class="clothing-tags">${item.tags.split(',').filter(t=>t.trim()).slice(0,3).map(t=>`<span class="clothing-tag">${escapeHTML(t.trim())}</span>`).join('')}</div>` : ''}
           <div class="clothing-meta">
-            <span class="meta-tag">${item.category}</span>
-            ${item.color ? `<span>${item.color}</span>` : ''}
+            <span class="meta-tag">${escapeHTML(item.category)}</span>
+            ${item.color ? `<span>${escapeHTML(item.color)}</span>` : ''}
             <span class="meta-worn">已穿 ${item.worn_count || 0} 次</span>
             ${item.worn_count > 0 ? `<span class="meta-cpw">¥${item.cost_per_wear}/次</span>` : ''}
           </div>
@@ -626,33 +651,33 @@ const App = {
       const rating = item.value_rating || { level: '-', color: '#999', score: 0 };
       const stars = '★'.repeat(rating.score) + '☆'.repeat(5 - rating.score);
       const historyHtml = item.wear_history && item.wear_history.length > 0
-        ? item.wear_history.slice(0, 10).map(h => `<div class="history-item"><span>${h.date}</span><span>${h.note || '—'}</span></div>`).join('')
+        ? item.wear_history.slice(0, 10).map(h => `<div class="history-item"><span>${escapeHTML(h.date)}</span><span>${escapeHTML(h.note || '—')}</span></div>`).join('')
         : '<p style="color:var(--text-secondary);font-size:12px">还没有穿着记录</p>';
 
       document.getElementById('detailBody').innerHTML = `
-        ${item.image_path ? `<img src="${item.image_path}" class="detail-image">` : ''}
+        ${item.image_path ? `<img src="${safeImageSrc(item.image_path)}" class="detail-image">` : ''}
         <div class="detail-cost-card">
           <div class="detail-cost-label">单次穿着成本</div>
-          <div class="detail-cost-value">¥${item.cost_per_wear}</div>
-          <div class="detail-cost-sub">${item.price > 0 ? `原价 ¥${item.price} ÷ ${item.worn_count} 次` : '未记录价格'}</div>
-          <div class="detail-rating" style="background:${rating.color}">${rating.level} · ${stars}</div>
+          <div class="detail-cost-value">¥${escapeHTML(item.cost_per_wear)}</div>
+          <div class="detail-cost-sub">${item.price > 0 ? `原价 ¥${escapeHTML(item.price)} ÷ ${item.worn_count} 次` : '未记录价格'}</div>
+          <div class="detail-rating" style="background:${rating.color}">${escapeHTML(rating.level)} · ${stars}</div>
         </div>
         <div class="detail-grid">
-          <div class="detail-item"><div class="detail-item-label">分类</div><div class="detail-item-value">${item.category}</div></div>
-          <div class="detail-item"><div class="detail-item-label">季节</div><div class="detail-item-value">${item.season}</div></div>
-          <div class="detail-item"><div class="detail-item-label">颜色</div><div class="detail-item-value">${item.color || '—'}</div></div>
-          <div class="detail-item"><div class="detail-item-label">品牌</div><div class="detail-item-value">${item.brand || '—'}</div></div>
-          <div class="detail-item"><div class="detail-item-label">材质</div><div class="detail-item-value">${item.material || '—'}</div></div>
-          <div class="detail-item"><div class="detail-item-label">场合</div><div class="detail-item-value">${item.occasion || '—'}</div></div>
-          <div class="detail-item"><div class="detail-item-label">状态</div><div class="detail-item-value"><span class="detail-status-tag status-${item.status || 'active'}">${this.statusLabel(item.status || 'active')}</span></div></div>
-          <div class="detail-item"><div class="detail-item-label">标签</div><div class="detail-item-value">${item.tags ? item.tags.split(',').filter(t=>t.trim()).map(t=>'<span class="detail-tag">'+t.trim()+'</span>').join('') : '—'}</div></div>
-          <div class="detail-item"><div class="detail-item-label">购买日期</div><div class="detail-item-value">${item.purchase_date || '—'}</div></div>
+          <div class="detail-item"><div class="detail-item-label">分类</div><div class="detail-item-value">${escapeHTML(item.category)}</div></div>
+          <div class="detail-item"><div class="detail-item-label">季节</div><div class="detail-item-value">${escapeHTML(item.season)}</div></div>
+          <div class="detail-item"><div class="detail-item-label">颜色</div><div class="detail-item-value">${escapeHTML(item.color || '—')}</div></div>
+          <div class="detail-item"><div class="detail-item-label">品牌</div><div class="detail-item-value">${escapeHTML(item.brand || '—')}</div></div>
+          <div class="detail-item"><div class="detail-item-label">材质</div><div class="detail-item-value">${escapeHTML(item.material || '—')}</div></div>
+          <div class="detail-item"><div class="detail-item-label">场合</div><div class="detail-item-value">${escapeHTML(item.occasion || '—')}</div></div>
+          <div class="detail-item"><div class="detail-item-label">状态</div><div class="detail-item-value"><span class="detail-status-tag status-${escapeHTML(item.status || 'active')}">${escapeHTML(this.statusLabel(item.status || 'active'))}</span></div></div>
+          <div class="detail-item"><div class="detail-item-label">标签</div><div class="detail-item-value">${item.tags ? item.tags.split(',').filter(t=>t.trim()).map(t=>'<span class="detail-tag">'+escapeHTML(t.trim())+'</span>').join('') : '—'}</div></div>
+          <div class="detail-item"><div class="detail-item-label">购买日期</div><div class="detail-item-value">${escapeHTML(item.purchase_date || '—')}</div></div>
           <div class="detail-item"><div class="detail-item-label">穿着次数</div><div class="detail-item-value">${item.worn_count} 次</div></div>
           <div class="detail-item"><div class="detail-item-label">洗衣状态</div><div class="detail-item-value">${item.needs_wash ? '<span class="wash-indicator">待清洗（穿'+item.wash_count+'次）</span>' : '已清洗（穿'+(item.wash_count||0)+'/'+(item.wash_threshold||3)+'次）'}</div></div>
-          ${item.last_wash_date ? '<div class="detail-item"><div class="detail-item-label">上次清洗</div><div class="detail-item-value">'+item.last_wash_date+'</div></div>' : ''}
-          <div class="detail-item"><div class="detail-item-label">添加时间</div><div class="detail-item-value" style="font-size:12px">${item.created_at}</div></div>
+          ${item.last_wash_date ? '<div class="detail-item"><div class="detail-item-label">上次清洗</div><div class="detail-item-value">'+escapeHTML(item.last_wash_date)+'</div></div>' : ''}
+          <div class="detail-item"><div class="detail-item-label">添加时间</div><div class="detail-item-value" style="font-size:12px">${escapeHTML(item.created_at)}</div></div>
         </div>
-        ${item.note ? `<div class="detail-item" style="margin-bottom:16px"><div class="detail-item-label">备注</div><div class="detail-item-value" style="font-size:13px">${item.note}</div></div>` : ''}
+        ${item.note ? `<div class="detail-item" style="margin-bottom:16px"><div class="detail-item-label">备注</div><div class="detail-item-value" style="font-size:13px">${escapeHTML(item.note)}</div></div>` : ''}
         <div class="detail-history"><h4>最近穿着记录</h4>${historyHtml}</div>
       `;
       document.getElementById('detailEditBtn').onclick = () => { this.closeModal('detailModal'); this.editClothing(id); };
@@ -746,8 +771,8 @@ const App = {
     const list = document.getElementById('outfitSelectList');
     list.innerHTML = this.wardrobe.map(item => `
       <div class="outfit-select-item ${this.selectedOutfitItems.includes(item.id) ? 'selected' : ''}" onclick="App.toggleOutfitItem(${item.id},this)">
-        <div class="item-img">${item.image_path ? `<img src="${item.image_path}">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;opacity:0.3">${this.categoryIcons[item.category] || this.categoryIcons['上衣']}</div>`}</div>
-        <div class="item-name">${item.name}</div>
+        <div class="item-img">${item.image_path ? `<img src="${safeImageSrc(item.image_path)}">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;opacity:0.3">${this.categoryIcons[item.category] || this.categoryIcons['上衣']}</div>`}</div>
+        <div class="item-name">${escapeHTML(item.name)}</div>
       </div>`).join('');
     document.getElementById('outfitModal').classList.add('show');
   },
@@ -792,7 +817,7 @@ const App = {
       this.generatedOutfit = slots;
 
       document.getElementById('outfitPreview').innerHTML = slots.map(s =>
-        `<div class="outfit-slot"><div class="outfit-slot-img">${s.item.image_path ? `<img src="${s.item.image_path}">` : `<div style="opacity:0.3;width:40px;height:40px">${this.categoryIcons[s.category] || this.categoryIcons['上衣']}</div>`}</div><div class="outfit-slot-label">${s.category} · ${s.item.name}</div>${s.weatherScore ? `<div class="outfit-slot-score">适配 ${s.weatherScore}%</div>` : ''}</div>`
+        `<div class="outfit-slot"><div class="outfit-slot-img">${s.item.image_path ? `<img src="${safeImageSrc(s.item.image_path)}">` : `<div style="opacity:0.3;width:40px;height:40px">${this.categoryIcons[s.category] || this.categoryIcons['上衣']}</div>`}</div><div class="outfit-slot-label">${escapeHTML(s.category)} · ${escapeHTML(s.item.name)}</div>${s.weatherScore ? `<div class="outfit-slot-score">适配 ${s.weatherScore}%</div>` : ''}</div>`
       ).join('');
       document.getElementById('saveOutfitBtn').style.display = 'inline-flex';
       document.getElementById('saveCollectionBtn').style.display = 'inline-flex';
@@ -853,7 +878,7 @@ const App = {
     this.generatedOutfit = slots;
 
     document.getElementById('outfitPreview').innerHTML = slots.length > 0
-      ? slots.map(s => `<div class="outfit-slot"><div class="outfit-slot-img">${s.item.image_path ? `<img src="${s.item.image_path}">` : `<div style="opacity:0.3;width:40px;height:40px">${this.categoryIcons[s.category] || this.categoryIcons['上衣']}</div>`}</div><div class="outfit-slot-label">${s.category} · ${s.item.name}</div></div>`).join('')
+      ? slots.map(s => `<div class="outfit-slot"><div class="outfit-slot-img">${s.item.image_path ? `<img src="${safeImageSrc(s.item.image_path)}">` : `<div style="opacity:0.3;width:40px;height:40px">${this.categoryIcons[s.category] || this.categoryIcons['上衣']}</div>`}</div><div class="outfit-slot-label">${escapeHTML(s.category)} · ${escapeHTML(s.item.name)}</div></div>`).join('')
       : '<p style="color:var(--text-secondary)">先添加一些衣服再来搭配吧</p>';
     document.getElementById('saveOutfitBtn').style.display = slots.length > 0 ? 'inline-flex' : 'none';
     document.getElementById('weatherScoreArea').style.display = 'none';
@@ -943,33 +968,33 @@ const App = {
       // 分类分布
       const maxCat = Math.max(...cats.map(c => c.count), 1);
       document.getElementById('categoryChart').innerHTML = cats.map(c =>
-        `<div class="bar-row"><div class="bar-label">${c.category}</div><div class="bar-track"><div class="bar-fill" style="width:${c.count / maxCat * 100}%">${c.count}</div></div></div>`
+        `<div class="bar-row"><div class="bar-label">${escapeHTML(c.category)}</div><div class="bar-track"><div class="bar-fill" style="width:${c.count / maxCat * 100}%">${c.count}</div></div></div>`
       ).join('') || '<p style="color:var(--text-secondary);font-size:13px">暂无数据</p>';
 
       // 季节分布
       const maxSeason = Math.max(...seasons.map(s => s.count), 1);
       document.getElementById('seasonChart').innerHTML = seasons.map(s =>
-        `<div class="bar-row"><div class="bar-label">${s.season}</div><div class="bar-track"><div class="bar-fill accent" style="width:${s.count / maxSeason * 100}%">${s.count}</div></div></div>`
+        `<div class="bar-row"><div class="bar-label">${escapeHTML(s.season)}</div><div class="bar-track"><div class="bar-fill accent" style="width:${s.count / maxSeason * 100}%">${s.count}</div></div></div>`
       ).join('') || '<p style="color:var(--text-secondary);font-size:13px">暂无数据</p>';
 
       // 穿着频率
       const maxWorn = Math.max(...mostWorn.map(i => i.worn_count), 1);
       document.getElementById('wornChart').innerHTML = mostWorn.length > 0
-        ? mostWorn.map((item, idx) => `<div class="bar-row"><div class="bar-label wide">${idx + 1}. ${item.name}</div><div class="bar-track"><div class="bar-fill green" style="width:${item.worn_count / maxWorn * 100}%">${item.worn_count}次</div></div></div>`).join('')
+        ? mostWorn.map((item, idx) => `<div class="bar-row"><div class="bar-label wide">${idx + 1}. ${escapeHTML(item.name)}</div><div class="bar-track"><div class="bar-fill green" style="width:${item.worn_count / maxWorn * 100}%">${item.worn_count}次</div></div></div>`).join('')
         : '<p style="color:var(--text-secondary);font-size:13px">还没有穿搭记录</p>';
 
       // 性价比
       document.getElementById('valueChart').innerHTML = bestValue.length > 0
         ? bestValue.map((item, idx) => {
             const rating = item.value_rating || { color: '#999' };
-            return `<div class="bar-row"><div class="bar-label wide" title="${item.name}">${idx + 1}. ${item.name}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(10, 100 - idx * 8)}%;background:${rating.color}">¥${item.cost_per_wear}/次</div></div></div>`;
+            return `<div class="bar-row"><div class="bar-label wide" title="${escapeHTML(item.name)}">${idx + 1}. ${escapeHTML(item.name)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(10, 100 - idx * 8)}%;background:${rating.color}">¥${item.cost_per_wear}/次</div></div></div>`;
           }).join('')
         : '<p style="color:var(--text-secondary);font-size:13px">还没有穿着记录</p>';
 
       // 待提升
       document.getElementById('underutilizedChart').innerHTML = underutilized.length > 0
         ? underutilized.slice(0, 10).map(item =>
-            `<div class="bar-row"><div class="bar-label wide" title="${item.name}">${item.name}</div><div class="bar-track"><div class="bar-fill accent" style="width:${Math.min(100, item.worn_count / 5 * 100)}%">穿${item.worn_count}次 · ¥${item.cost_per_wear}/次</div></div></div>`
+            `<div class="bar-row"><div class="bar-label wide" title="${escapeHTML(item.name)}">${escapeHTML(item.name)}</div><div class="bar-track"><div class="bar-fill accent" style="width:${Math.min(100, item.worn_count / 5 * 100)}%">穿${item.worn_count}次 · ¥${item.cost_per_wear}/次</div></div></div>`
           ).join('')
         : '<p style="color:var(--text-secondary);font-size:13px">没有待提升的衣物，继续保持！</p>';
 
@@ -985,7 +1010,7 @@ const App = {
           '<div style="text-align:center"><div style="font-size:11px;color:var(--text-secondary)">正常使用</div><div style="font-size:18px;font-weight:700;color:#D4A84B">' + (d.byStatus['正常使用']||0) + '</div></div>' +
           '<div style="text-align:center"><div style="font-size:11px;color:var(--text-secondary)">建议淘汰</div><div style="font-size:18px;font-weight:700;color:#C45F5F">' + (d.byStatus['建议淘汰']||0) + '</div></div>';
         document.getElementById('depreciationChart').innerHTML = d.toRetire.length > 0
-          ? d.toRetire.map(item => '<div class="bar-row"><div class="bar-label wide" title="' + item.name + '">' + item.name + '</div><div class="bar-track"><div class="bar-fill accent" style="width:' + Math.max(10, (1 - item.depreciationRate) * 100) + '%">估值¥' + item.currentValue + ' · 穿' + item.wornCount + '次</div></div></div>').join('')
+          ? d.toRetire.map(item => '<div class="bar-row"><div class="bar-label wide" title="' + escapeHTML(item.name) + '">' + escapeHTML(item.name) + '</div><div class="bar-track"><div class="bar-fill accent" style="width:' + Math.max(10, (1 - item.depreciationRate) * 100) + '%">估值¥' + item.currentValue + ' · 穿' + item.wornCount + '次</div></div></div>').join('')
           : '<p style="color:var(--text-secondary);font-size:13px">所有衣物状态良好，暂无建议淘汰项</p>';
       } else {
         document.getElementById('depreciationSummary').innerHTML = '<p style="color:var(--text-secondary);font-size:13px">记录衣物价格后可查看折旧分析</p>';
@@ -1152,14 +1177,14 @@ const App = {
         '<div class="shopping-item-main">' +
           '<div class="shopping-item-check" onclick="App.' + (isPurchased ? 'unpurchaseShoppingItem' : 'purchaseShoppingItem') + '(' + item.id + ')">' + (isPurchased ? '✓' : '') + '</div>' +
           '<div class="shopping-item-info">' +
-            '<div class="shopping-item-name">' + item.name + '</div>' +
+            '<div class="shopping-item-name">' + escapeHTML(item.name) + '</div>' +
             '<div class="shopping-item-meta">' +
-              '<span class="meta-tag">' + item.category + '</span>' +
+              '<span class="meta-tag">' + escapeHTML(item.category) + '</span>' +
               '<span class="shopping-priority" style="color:' + p.color + '">' + p.label + '优先级</span>' +
               (item.estimated_price > 0 ? '<span>预估 ¥' + item.estimated_price + '</span>' : '') +
               (isPurchased && item.purchased_at ? '<span style="color:var(--text-secondary);font-size:11px">购于 ' + item.purchased_at.slice(0, 10) + '</span>' : '') +
             '</div>' +
-            (item.note ? '<div class="shopping-item-note">' + item.note + '</div>' : '') +
+            (item.note ? '<div class="shopping-item-note">' + escapeHTML(item.note) + '</div>' : '') +
           '</div>' +
         '</div>' +
         '<div class="shopping-item-actions">' +
@@ -1291,16 +1316,16 @@ const App = {
       const items = o.items || [];
       return '<div class="saved-card">' +
         '<div class="saved-card-header">' +
-          '<div class="saved-card-name">' + o.name + '</div>' +
+          '<div class="saved-card-name">' + escapeHTML(o.name) + '</div>' +
           '<div class="saved-card-meta">' + items.length + '件 · 总价值 ¥' + (o.total_value || 0) + '</div>' +
         '</div>' +
         '<div class="saved-card-items">' +
           items.slice(0, 6).map(item =>
-            '<div class="saved-item-thumb">' + (item.image_path ? '<img src="' + item.image_path + '">' : '<div style="opacity:0.3;width:100%;height:100%;display:flex;align-items:center;justify-content:center">' + (this.categoryIcons[item.category] || '') + '</div>') + '</div>'
+            '<div class="saved-item-thumb">' + (item.image_path ? '<img src="' + safeImageSrc(item.image_path) + '">' : '<div style="opacity:0.3;width:100%;height:100%;display:flex;align-items:center;justify-content:center">' + (this.categoryIcons[item.category] || '') + '</div>') + '</div>'
           ).join('') +
           (items.length > 6 ? '<div class="saved-item-more">+' + (items.length - 6) + '</div>' : '') +
         '</div>' +
-        (o.note ? '<div class="saved-card-note">' + o.note + '</div>' : '') +
+        (o.note ? '<div class="saved-card-note">' + escapeHTML(o.note) + '</div>' : '') +
         '<div class="saved-card-actions">' +
           '<button class="btn btn-primary btn-sm" onclick="App.applySavedOutfit(' + o.id + ')">今日穿这套</button>' +
           '<button class="btn btn-outline btn-sm" onclick="App.deleteSavedOutfit(' + o.id + ')">删除</button>' +

@@ -1,6 +1,7 @@
 const initSqlJs = require('sql.js');
 const path = require('path');
 const fs = require('fs');
+const { writeAtomically } = require('./atomicWrite');
 
 const dataDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -9,30 +10,34 @@ const dbPath = path.join(dataDir, 'wardrobe.db');
 let db = null;
 let saveTimer = null;
 
+// Persist the full snapshot through a same-directory temporary file.
+// A failed write or rename must never truncate the last good database.
+function persistSnapshot() {
+  if (!db) return;
+  writeAtomically(dbPath, Buffer.from(db.export()));
+}
+
 // 保存到磁盘（防抖）
 function save() {
   if (!db) return;
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
+    saveTimer = null;
     try {
-      const data = db.export();
-      const buffer = Buffer.from(data);
-      fs.writeFileSync(dbPath, buffer);
+      persistSnapshot();
     } catch (err) {
-      console.error('[DB] 保存失败:', err.message);
+      console.error('[DB] 保存失败:', err);
     }
   }, 300);
 }
 
-// 立即保存
+// 立即保存：取消待执行的防抖保存，失败时抛错，避免误报初始化成功。
 function saveNow() {
-  if (!db) return;
-  try {
-    const data = db.export();
-    fs.writeFileSync(dbPath, Buffer.from(data));
-  } catch (err) {
-    console.error('[DB] 立即保存失败:', err.message);
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
   }
+  persistSnapshot();
 }
 
 async function initDatabase() {

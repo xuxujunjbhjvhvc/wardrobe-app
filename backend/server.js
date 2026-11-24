@@ -4,6 +4,7 @@ const { listenHost, localAccess } = require('./middleware/localAccess');
 const path = require('path');
 const fs = require('fs');
 const { initDatabase } = require('./db/database');
+const { importBackup } = require('./utils/importBackup');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 
 const app = express();
@@ -48,83 +49,13 @@ async function start() {
   // 数据导入 API（v1.0.3）
   const { db } = require('./db/database');
   app.post('/api/import', (req, res) => {
-    const { wardrobe = [], outfits = [], mode = 'merge' } = req.body;
-    // Validate the entire import envelope before any destructive replace operation.
-    if (!Array.isArray(wardrobe) || !Array.isArray(outfits)) {
-      return res.status(400).json({ success: false, error: '数据格式错误：wardrobe 和 outfits 必须都是数组' });
-    }
-    if (mode !== 'merge' && mode !== 'replace') {
-      return res.status(400).json({ success: false, error: '导入模式必须是 merge 或 replace' });
-    }
-    if (wardrobe.some(item => !item || typeof item !== 'object' || Array.isArray(item)) ||
-        outfits.some(outfit => !outfit || typeof outfit !== 'object' || Array.isArray(outfit))) {
-      return res.status(400).json({ success: false, error: '导入记录必须是对象' });
-    }
-    let transactionStarted = false;
     try {
-      db.exec('BEGIN');
-      transactionStarted = true;
-      let importedClothing = 0, importedOutfits = 0, skipped = 0;
-
-      if (mode === 'replace') {
-        db.prepare('DELETE FROM outfit_items').run();
-        db.prepare('DELETE FROM outfits').run();
-        db.prepare('DELETE FROM clothing').run();
-      }
-
-      // 导入衣物
-      const idMap = {}; // 旧ID -> 新ID
-      for (const item of wardrobe) {
-        if (!item.name) continue;
-        if (mode === 'merge') {
-          const existing = db.prepare('SELECT id FROM clothing WHERE name = ? AND category = ? AND status = "active"').get(item.name, item.category || '上衣');
-          if (existing) { idMap[item.id] = existing.id; skipped++; continue; }
-        }
-        const result = db.prepare(`
-          INSERT INTO clothing (name, category, season, color, price, brand, material, purchase_date, note, image_path, tags, worn_count, wash_count, wash_threshold, last_wash_date)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          item.name, item.category || '上衣', item.season || '四季', item.color || '',
-          item.price || 0, item.brand || '', item.material || '', item.purchase_date || '',
-          item.note || '', item.image_path || '', item.tags || '',
-          item.worn_count || 0, item.wash_count || 0, item.wash_threshold || 3, item.last_wash_date || ''
-        );
-        idMap[item.id] = result.lastInsertRowid;
-        importedClothing++;
-      }
-
-      // 导入穿搭记录
-      for (const outfit of outfits) {
-        if (!outfit.date) continue;
-        if (mode === 'merge') {
-          const existing = db.prepare('SELECT id FROM outfits WHERE date = ?').get(outfit.date);
-          if (existing) continue;
-        }
-        const result = db.prepare('INSERT INTO outfits (date, note, weather) VALUES (?, ?, ?)').run(
-          outfit.date, outfit.note || '', outfit.weather || ''
-        );
-        if (Array.isArray(outfit.items)) {
-          for (const ci of outfit.items) {
-            const newId = idMap[ci.id] || ci.id;
-            const exists = db.prepare('SELECT id FROM clothing WHERE id = ?').get(newId);
-            if (exists) {
-              db.prepare('INSERT OR IGNORE INTO outfit_items (outfit_id, clothing_id) VALUES (?, ?)').run(result.lastInsertRowid, newId);
-            }
-          }
-        }
-        importedOutfits++;
-      }
-
-      db.exec('COMMIT');
-      transactionStarted = false;
-      res.json({ success: true, importedClothing, importedOutfits, skipped, mode });
+      const outcome = importBackup(db, req.body);
+      if (outcome.error) return res.status(400).json({ success: false, error: outcome.error });
+      res.json({ success: true, ...outcome });
     } catch (err) {
-      if (transactionStarted) {
-        try { db.exec('ROLLBACK'); } catch (rollbackError) {
-          console.error('[Import] rollback failed:', rollbackError);
-        }
-      }
-      res.status(500).json({ success: false, error: '导入失败: ' + err.message });
+      console.error('[Import] failed:', err);
+      res.status(500).json({ success: false, error: '导入失败，数据已回滚' });
     }
   });
 

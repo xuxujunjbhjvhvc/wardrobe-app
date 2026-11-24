@@ -45,13 +45,22 @@ test('merge maps source IDs rather than colliding existing destination IDs', asy
     assert.deepEqual(linked,[['new']]);
   } finally { raw.close(); }
 });
-test('replace removes stale favorites and maps links to newly inserted rows', async () => {
+test('replace rejects restoring over favorites that are absent from legacy backups', async () => {
   const { raw, db }=await fixture();
   try {
+    const result=importBackup(db,{wardrobe:[item(3,'restored')],outfits:[],mode:'replace'});
+    assert.match(result.error, /收藏搭配/);
+    assert.deepEqual(rows(raw,'SELECT id,name FROM clothing'),[[9,'existing']]);
+    assert.deepEqual(rows(raw,'SELECT count(*) FROM saved_outfits'),[[1]]);
+    assert.deepEqual(rows(raw,'SELECT count(*) FROM saved_outfit_items'),[[1]]);
+  } finally { raw.close(); }
+});
+test('replace maps links correctly when no existing favorites are at risk', async () => {
+  const { raw, db }=await fixture();
+  try {
+    raw.exec('DELETE FROM saved_outfit_items; DELETE FROM saved_outfits;');
     const result=importBackup(db,{wardrobe:[item(3,'restored')],outfits:[{date:'2026-11-24',items:[{id:3}]}],mode:'replace'});
     assert.equal(result.importedClothing,1);
-    assert.deepEqual(rows(raw,'SELECT count(*) FROM saved_outfits'),[[0]]);
-    assert.deepEqual(rows(raw,'SELECT count(*) FROM saved_outfit_items'),[[0]]);
     assert.deepEqual(rows(raw,"SELECT c.name FROM outfit_items oi JOIN clothing c ON c.id=oi.clothing_id"),[['restored']]);
   } finally { raw.close(); }
 });

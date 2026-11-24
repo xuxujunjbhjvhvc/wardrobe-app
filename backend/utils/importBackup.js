@@ -34,6 +34,15 @@ function importBackup(db, input) {
   const problem = validateBackup(input);
   if (problem) return { error: problem };
   const { wardrobe = [], outfits = [], mode = 'merge' } = input;
+  // Existing backups contain clothing and outfits, but not saved favorites.
+  // Do not silently destroy favorites whose clothing IDs would be replaced.
+  if (mode === 'replace') {
+    const favorites = db.prepare('SELECT count(*) AS count FROM saved_outfits').get();
+    const favoriteLinks = db.prepare('SELECT count(*) AS count FROM saved_outfit_items').get();
+    if (Number(favorites?.count || 0) > 0 || Number(favoriteLinks?.count || 0) > 0) {
+      return { error: '覆盖导入已取消：现有收藏搭配不在备份内，请先备份并处理收藏搭配，或使用合并导入' };
+    }
+  }
   const idMap = new Map();
   let started = false;
   try {
@@ -42,8 +51,6 @@ function importBackup(db, input) {
     if (mode === 'replace') {
       db.prepare('DELETE FROM outfit_items').run();
       db.prepare('DELETE FROM outfits').run();
-      db.prepare('DELETE FROM saved_outfit_items').run();
-      db.prepare('DELETE FROM saved_outfits').run();
       db.prepare('DELETE FROM clothing').run();
     }
     let importedClothing = 0, importedOutfits = 0, skipped = 0;

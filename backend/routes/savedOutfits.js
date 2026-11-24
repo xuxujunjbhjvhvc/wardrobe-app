@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../db/database');
 const { calcCostPerWear, calcValueRating } = require('../utils/helpers');
+const { today } = require('../utils/helpers');
+const { applySavedOutfit } = require('../utils/applySavedOutfit');
 
 // 获取所有收藏搭配
 router.get('/', (req, res) => {
@@ -89,35 +91,18 @@ router.delete('/:id', (req, res) => {
   res.json({ success: true, message: '已删除收藏' });
 });
 
-// 将收藏搭配应用为今日穿搭
+// 将收藏搭配应用为今日穿搭；重复应用同一天不会重复累计穿着次数。
 router.post('/:id/apply', (req, res) => {
-  const outfit = db.prepare('SELECT * FROM saved_outfits WHERE id = ?').get(req.params.id);
-  if (!outfit) return res.status(404).json({ success: false, error: '收藏搭配不存在' });
-
-  const items = db.prepare('SELECT clothing_id FROM saved_outfit_items WHERE saved_outfit_id = ?').all(outfit.id);
-  const clothingIds = items.map(i => i.clothing_id);
-
-  const today = new Date().toISOString().slice(0, 10);
-  const existing = db.prepare('SELECT id FROM outfits WHERE date = ?').get(today);
-
-  let outfitId;
-  if (existing) {
-    outfitId = existing.id;
-    db.prepare('DELETE FROM outfit_items WHERE outfit_id = ?').run(outfitId);
-  } else {
-    const result = db.prepare('INSERT INTO outfits (date, note) VALUES (?, ?)').run(today, outfit.note || '');
-    outfitId = result.lastInsertRowid;
+  try {
+    const outcome = applySavedOutfit(db, req.params.id, today());
+    if (outcome.error === 'not_found') return res.status(404).json({ success: false, error: '收藏搭配不存在' });
+    if (outcome.error === 'empty') return res.status(400).json({ success: false, error: '搭配中没有有效衣物' });
+    if (outcome.error === 'invalid_clothing') return res.status(400).json({ success: false, error: '搭配包含不存在或不可穿着的衣物' });
+    res.json({ success: true, message: '已应用为今日穿搭', data: outcome });
+  } catch (error) {
+    console.error('[Saved outfit] apply failed:', error);
+    res.status(500).json({ success: false, error: '应用搭配失败，已尝试回滚数据' });
   }
-
-  const insertStmt = db.prepare('INSERT OR IGNORE INTO outfit_items (outfit_id, clothing_id) VALUES (?, ?)');
-  clothingIds.forEach(id => insertStmt.run(outfitId, id));
-
-  // 累加穿着次数和洗衣计数
-  clothingIds.forEach(id => {
-    db.prepare('UPDATE clothing SET worn_count = worn_count + 1, wash_count = wash_count + 1 WHERE id = ?').run(id);
-  });
-
-  res.json({ success: true, message: '已应用为今日穿搭', data: { date: today, outfit_id: outfitId, items: clothingIds.length } });
 });
 
 module.exports = router;

@@ -655,7 +655,7 @@ const App = {
         : '<p style="color:var(--text-secondary);font-size:12px">还没有穿着记录</p>';
 
       document.getElementById('detailBody').innerHTML = `
-        ${item.image_path ? `<img src="${safeImageSrc(item.image_path)}" class="detail-image">` : ''}
+        ${safeImageSrc(item.image_path) ? `<img src="${safeImageSrc(item.image_path)}" class="detail-image">` : ''}
         <div class="detail-cost-card">
           <div class="detail-cost-label">单次穿着成本</div>
           <div class="detail-cost-value">¥${escapeHTML(item.cost_per_wear)}</div>
@@ -743,7 +743,7 @@ const App = {
       const firstItem = outfit?.items?.[0];
       html += `<div class="calendar-day ${isToday ? 'today' : ''} ${outfit ? 'has-outfit' : ''}" onclick="App.openOutfitForDate('${dateStr}')">
         <div class="day-number">${d}</div>
-        ${firstItem ? `<div class="day-outfit">${firstItem.image_path ? `<img src="${firstItem.image_path}">` : ''}</div>` : ''}
+        ${firstItem ? `<div class="day-outfit">${firstItem.image_path ? `<img src="${safeImageSrc(firstItem.image_path)}">` : ''}</div>` : ''}
         ${outfit ? `<div class="day-outfit-count">${outfit.items.length}件</div>` : ''}
       </div>`;
     }
@@ -837,7 +837,7 @@ const App = {
       // 穿搭建议
       const tipsArea = document.getElementById('weatherTipsArea');
       if (result.tips && result.tips.length > 0) {
-        document.getElementById('weatherTipsList').innerHTML = result.tips.map(t => `<li>${t}</li>`).join('');
+        document.getElementById('weatherTipsList').innerHTML = result.tips.map(t => `<li>${escapeHTML(t)}</li>`).join('');
         tipsArea.style.display = 'block';
       } else {
         tipsArea.style.display = 'none';
@@ -1049,7 +1049,7 @@ const App = {
       if (report.mostWorn.length > 0) {
         const maxMonthWorn = Math.max(...report.mostWorn.map(i => i.month_worn), 1);
         mostWornEl.innerHTML = report.mostWorn.map((item, idx) =>
-          '<div class="bar-row"><div class="bar-label wide">' + (idx + 1) + '. ' + item.name + '</div><div class="bar-track"><div class="bar-fill green" style="width:' + (item.month_worn / maxMonthWorn * 100) + '%">' + item.month_worn + '次</div></div></div>'
+          '<div class="bar-row"><div class="bar-label wide">' + (idx + 1) + '. ' + escapeHTML(item.name) + '</div><div class="bar-track"><div class="bar-fill green" style="width:' + (item.month_worn / maxMonthWorn * 100) + '%">' + item.month_worn + '次</div></div></div>'
         ).join('');
       } else {
         mostWornEl.innerHTML = '<p style="color:var(--text-secondary);font-size:13px">本月还没有穿搭记录</p>';
@@ -1062,7 +1062,7 @@ const App = {
         trendEl.innerHTML = '<div class="daily-trend-bars">' + report.dailyTrend.map(d => {
           const day = parseInt(d.date.slice(8, 10));
           const height = Math.max(4, d.item_count / maxItems * 100);
-          return '<div class="daily-trend-bar" title="' + d.date + ': ' + d.item_count + '件" style="height:' + height + '%"><span class="daily-trend-day">' + day + '</span></div>';
+          return '<div class="daily-trend-bar" title="' + escapeHTML(d.date) + ': ' + d.item_count + '件" style="height:' + height + '%"><span class="daily-trend-day">' + day + '</span></div>';
         }).join('') + '</div>';
       } else {
         trendEl.innerHTML = '<p style="color:var(--text-secondary);font-size:13px">本月暂无穿搭趋势数据</p>';

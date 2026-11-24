@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
+const { listenHost, localAccess } = require('./middleware/localAccess');
 const path = require('path');
 const fs = require('fs');
 const { initDatabase } = require('./db/database');
@@ -8,9 +8,10 @@ const { errorHandler, notFound } = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = listenHost(process.env.HOST);
 
 // 中间件
-app.use(cors());
+app.use(localAccess);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -136,11 +137,13 @@ async function start() {
   app.use(notFound);
   app.use(errorHandler);
 
-  app.listen(PORT, () => {
+  app.listen(PORT, HOST, () => {
     console.log(`\n  👔 电子衣橱服务已启动`);
-    console.log(`  📡 本地地址: http://localhost:${PORT}`);
-    console.log(`  📱 手机访问: http://<你的IP>:${PORT}`);
-    console.log(`  📊 健康检查: http://localhost:${PORT}/api/health\n`);
+    console.log(`  📡 监听地址: http://${HOST.includes(':') ? '[' + HOST + ']' : HOST}:${PORT}`);
+    console.log(`  📊 健康检查: http://127.0.0.1:${PORT}/api/health`);
+    if (HOST === '0.0.0.0' || HOST === '::') {
+      console.warn('  ⚠️ 局域网模式：无账户认证，请仅连接可信网络，不要向公网开放端口。');
+    }
   });
 }
 

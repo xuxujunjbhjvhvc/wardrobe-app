@@ -9,7 +9,6 @@
     "test": "node --test"
   },
   "dependencies": {
-    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "sql.js": "^1.12.0"
